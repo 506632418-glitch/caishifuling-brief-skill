@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蔡氏福宁 · 产品brief 填写工作台</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" onerror="console.warn('html2canvas CDN load failed')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="console.warn('jsPDF CDN load failed')"></script>
+<style>
+  :root {
+    --purple-50: #EEEDFE; --purple-100: #DCD9FB; --purple-500: #534AB7; --purple-800: #3C3489;
+    --teal-50: #E1F5EE; --teal-100: #C3EBDC; --teal-500: #1D9E75; --teal-800: #085041;
+    --blue-50: #E6F1FB; --blue-100: #CCE3F7; --blue-500: #378ADD; --blue-800: #0C447C;
+    --sky-50: #E8F5FD; --sky-100: #D0EBFB; --sky-500: #2E90D1; --sky-800: #0E4A7A;
+    --green-50: #EAF3DE; --green-100: #D4E7BD; --green-500: #639922; --green-800: #27500A;
+    --amber-50: #FAEEDA; --amber-100: #F5DCB5; --amber-500: #BA7517; --amber-800: #633806;
+    --rose-50: #FCE8EC; --rose-100: #F9D1D9; --rose-500: #C94A6D; --rose-800: #7A1E3C;
+    --gray-50: #F9F8F5; --gray-100: #F1EFE8; --gray-200: #D3D1C7; --gray-300: #B8B6AD;
+    --gray-400: #888780; --gray-600: #5F5E5A; --gray-900: #2C2C2A;
+    --white: #FFFFFF;
+    --red-500: #E05555; --red-50: #FDEDED;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; line-height: 1.6; color: var(--gray-900);
+    background: var(--gray-50);
+  }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--white); border-bottom: 1px solid var(--gray-200);
+    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 1px 6px rgba(0,0,0,.06);
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 12px; }
+  .toolbar-logo { font-size: 18px; font-weight: 700; color: var(--purple-800); }
+  .toolbar-logo span { color: var(--teal-500); }
+  .toolbar-right { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: all .15s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--purple-500); color: var(--white); }
+  .btn-primary:hover { background: var(--purple-800); }
+  .btn-outline { background: var(--white); color: var(--purple-500); border: 1.5px solid var(--purple-500); }
+  .btn-outline:hover { background: var(--purple-50); }
+  .btn-ghost { background: transparent; color: var(--gray-600); border: 1.5px solid var(--gray-200); }
+  .btn-ghost:hover { background: var(--gray-100); }
+  .btn-danger { background: transparent; color: var(--red-500); border: 1.5px solid var(--red-500); }
+  .btn-danger:hover { background: var(--red-50); }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+
+  .progress-wrap { padding: 16px 24px; background: var(--white); border-bottom: 1px solid var(--gray-100); }
+  .progress-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; color: var(--gray-600); }
+  .progress-bar { height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--teal-500); border-radius: 3px; transition: width .4s ease; }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  .section {
+    background: var(--white); border-radius: 12px;
+    margin-bottom: 24px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    border-left: 4px solid transparent;
+  }
+  .section.strategy { border-left-color: var(--teal-500); }
+  .section.product { border-left-color: var(--sky-500); }
+  .section.mind { border-left-color: var(--amber-500); }
+  .section.market { border-left-color: var(--rose-500); }
+  .section.people { border-left-color: var(--blue-500); }
+  .section.scene { border-left-color: var(--blue-500); }
+  .section.value { border-left-color: var(--green-500); }
+  .section.qa { border-left-color: var(--purple-500); }
+
+  .section-header {
+    padding: 18px 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; user-select: none;
+  }
+  .section-header:hover { background: var(--gray-50); }
+  .section-title-wrap { display: flex; align-items: center; gap: 10px; }
+  .section-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .dot-strategy { background: var(--teal-500); }
+  .dot-product { background: var(--sky-500); }
+  .dot-mind { background: var(--amber-500); }
+  .dot-market { background: var(--rose-500); }
+  .dot-people { background: var(--blue-500); }
+  .dot-scene { background: var(--blue-500); }
+  .dot-value { background: var(--green-500); }
+  .dot-qa { background: var(--purple-500); }
+
+  .section-title { font-size: 16px; font-weight: 600; }
+  .section-subtitle { font-size: 12px; color: var(--gray-400); margin-left: 6px; }
+  .section-toggle { font-size: 20px; color: var(--gray-400); transition: transform .2s; }
+  .section.collapsed .section-toggle { transform: rotate(-90deg); }
+  .section.collapsed .section-body { display: none; }
+  .section-body { padding: 0 24px 24px; }
+
+  .field-group { margin-bottom: 20px; }
+  .field-group:last-child { margin-bottom: 0; }
+
+  .field-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 8px;
+  }
+  .field-label { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+  .field-label .required { color: var(--red-500); margin-left: 4px; }
+  .field-label .optional { color: var(--gray-400); margin-left: 4px; font-weight: 400; font-size: 12px; }
+
+  .field-hint { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .hint-badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 12px;
+    font-weight: 500; cursor: pointer; border: none; transition: all .15s;
+  }
+  .hint-standard { background: var(--blue-50); color: var(--blue-800); }
+  .hint-standard:hover { background: var(--blue-100); }
+  .hint-example { background: var(--green-50); color: var(--green-800); }
+  .hint-example:hover { background: var(--green-100); }
+
+  .standard-text {
+    font-size: 12px; color: var(--gray-600); padding: 8px 12px;
+    background: var(--blue-50); border-radius: 8px; margin-bottom: 8px;
+    line-height: 1.5; display: none;
+  }
+  .standard-text.show { display: block; }
+  .example-text {
+    font-size: 12px; color: var(--gray-900); padding: 10px 12px;
+    background: var(--green-50); border-radius: 8px; margin-bottom: 8px;
+    line-height: 1.6; display: none; border-left: 3px solid var(--green-500);
+  }
+  .example-text.show { display: block; }
+  .example-text .ex-title {
+    font-size: 10px; color: var(--green-500); font-weight: 600; margin-bottom: 4px;
+  }
+
+  input[type="text"], textarea, select {
+    width: 100%; padding: 10px 14px;
+    font-size: 14px; font-family: inherit; line-height: 1.6;
+    border: 1.5px solid var(--gray-200); border-radius: 8px;
+    color: var(--gray-900); background: var(--white);
+    transition: border-color .15s, box-shadow .15s; resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus {
+    outline: none; border-color: var(--purple-500);
+    box-shadow: 0 0 0 3px var(--purple-50);
+  }
+  textarea { min-height: 72px; }
+  textarea.tall { min-height: 120px; }
+
+  /* Item card */
+  .item-card {
+    border: 1px solid var(--gray-200); border-radius: 10px;
+    padding: 14px 16px; background: var(--gray-50); margin-bottom: 10px;
+  }
+  .item-card-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+  }
+  .item-card-label { font-weight: 700; font-size: 13px; }
+  .item-card-fields { display: flex; flex-direction: column; gap: 8px; }
+
+  /* Multi-field row */
+  .multi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 600px) { .multi-row { grid-template-columns: 1fr; } }
+
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--gray-900); color: var(--white);
+    padding: 10px 24px; border-radius: 20px; font-size: 13px;
+    z-index: 999; pointer-events: none;
+    opacity: 0; transition: opacity .3s;
+  }
+  .toast.show { opacity: 1; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.4); align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 16px; padding: 32px;
+    max-width: 820px; width: 94%; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  }
+  .modal h2 { font-size: 18px; margin-bottom: 8px; color: var(--purple-800); }
+  .modal .preview-content {
+    font-size: 14px; line-height: 1.8; color: var(--gray-900);
+    background: var(--gray-50); padding: 20px; border-radius: 8px; max-height: 55vh; overflow-y: auto;
+  }
+  .preview-content h3 { font-size: 15px; color: var(--purple-800); margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--gray-200); }
+  .preview-content h3:first-child { margin-top: 0; }
+  .preview-content .preview-field { margin-bottom: 12px; }
+  .preview-content .preview-field-label { font-weight: 600; font-size: 13px; color: var(--gray-600); margin-bottom: 2px; }
+  .preview-content .preview-field-value { font-size: 13px; color: var(--gray-900); white-space: pre-wrap; line-height: 1.7; }
+
+  .modal-actions { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* Markdown modal */
+  .md-area {
+    width: 100%; min-height: 300px; font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+    font-size: 12px; padding: 14px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+    resize: vertical; color: var(--gray-900); background: var(--gray-50);
+  }
+  .md-area:focus { outline: none; border-color: var(--purple-500); box-shadow: 0 0 0 3px var(--purple-50); }
+
+  @media (max-width: 768px) {
+    .people-ref-grid { grid-template-columns: 1fr !important; }
+    .toolbar { flex-direction: column; gap: 10px; align-items: stretch; }
+    .toolbar-right { justify-content: center; }
+    .main { padding: 16px; }
+    .modal { padding: 20px; }
+  }
+
+  @media print {
+    .toolbar, .progress-wrap, .btn, .toast, .modal-overlay, .hint-badge, .section-toggle { display: none !important; }
+    .section { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="toolbar-logo">蔡氏福宁 <span>·</span> 产品brief</div>
+  </div>
+  <div class="toolbar-right">
+    <button class="btn btn-ghost" onclick="showPreview()">📋 预览摘要</button>
+    <button class="btn btn-outline" onclick="exportPDF()">📄 下载PDF</button>
+    <button class="btn btn-outline" onclick="exportMarkdown()">📝 导出Markdown</button>
+    <button class="btn btn-outline" onclick="showImportMarkdown()">📥 导入Markdown</button>
+    <button class="btn btn-danger" onclick="clearAll()">🗑️ 清空</button>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-info">
+    <span id="progress-label">填写进度</span>
+    <span id="progress-pct">0%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<div class="main">
+
+  <!-- ═══════ 一、战略层 ═══════ -->
+  <div class="section strategy" id="sec-strategy">
+    <div class="section-header" onclick="toggleSection('sec-strategy')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-strategy"></div>
+        <span class="section-title">战略层</span>
+        <span class="section-subtitle">屋顶 · 品类与定位</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">产品名称 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-name')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-name')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-s-name">产品正式名称，如「蔡氏福宁·休足贴」「蔡氏福宁·泡脚包」</div>
+        <div class="example-text" id="ex-s-name"><span class="ex-title">休足贴范例</span>蔡氏福宁·休足贴</div>
+        <input type="text" id="f-s-name" placeholder="蔡氏福宁·XXX" oninput="updateProgress()">
+      </div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">品类定义 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-category')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-category')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-s-category"><strong>消费者视角：</strong>货架上/搜索时会怎么称呼这个品类。<strong>不是技术定义</strong>。公式：[用途/形态] + [品类名] + [解决什么]</div>
+        <div class="example-text" id="ex-s-category"><span class="ex-title">休足贴范例</span>外用舒缓足贴 —— 贴在腿足部位，缓解久站/暴走/运动后的腿足疲劳和酸胀</div>
+        <textarea id="f-s-category" placeholder="消费者视角的品类名称 + 解决什么问题" oninput="updateProgress()"></textarea>
+      </div>
+
+      <!-- 修改1：去掉价格，只保留规格 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">产品规格</span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-spec')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-spec')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-s-spec">规格（片/盒、ml/瓶、g/盒等），多规格请用换行列出</div>
+        <div class="example-text" id="ex-s-spec"><span class="ex-title">休足贴范例</span>8片/盒</div>
+        <textarea id="f-s-spec" placeholder="XX片/盒&#10;也可分行列出多规格" oninput="updateProgress()"></textarea>
+      </div>
+
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">战略角色 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-role')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-role')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-s-role">选一（可主次两个）：<strong>引流款</strong>（拉新拓客）/ <strong>利润款</strong>（贡献毛利）/ <strong>形象款</strong>（立品牌高度）/ <strong>卡位款</strong>（占品类入口）。需写清选择理由</div>
+        <div class="example-text" id="ex-s-role"><span class="ex-title">休足贴范例</span><strong>引流款</strong>（品类认知度高、决策门槛低，适合首次接触蔡氏福宁）+ <strong>利润款</strong>（高频消耗品，复购驱动）</div>
+        <select id="f-s-role-1" onchange="updateProgress()">
+          <option value="">-- 请选择主角色 --</option>
+          <option value="引流款">引流款（拉新拓客）</option>
+          <option value="利润款">利润款（贡献毛利）</option>
+          <option value="形象款">形象款（立品牌高度）</option>
+          <option value="卡位款">卡位款（占品类入口）</option>
+        </select>
+        <select id="f-s-role-2" style="margin-top:8px" onchange="updateProgress()">
+          <option value="">-- 请选择次角色（可选） --</option>
+          <option value="引流款">引流款（拉新拓客）</option>
+          <option value="利润款">利润款（贡献毛利）</option>
+          <option value="形象款">形象款（立品牌高度）</option>
+          <option value="卡位款">卡位款（占品类入口）</option>
+        </select>
+        <textarea id="f-s-role-reason" placeholder="选择理由（必填）" style="margin-top:8px" oninput="updateProgress()"></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ 二、心智层 ═══════ -->
+  <div class="section mind" id="sec-mind">
+    <div class="section-header" onclick="toggleSection('sec-mind')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-mind"></div>
+        <span class="section-title">心智层</span>
+        <span class="section-subtitle">一句购买理由 + 销售话术</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">产品口号 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-m-slogan')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-m-slogan')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-m-slogan">
+          四大创作方向至少实现一种：<br>
+          ① <strong>场景+解决方案</strong> — "什么时候难受，我能解决它"<br>
+          ② <strong>因为+所以</strong> — "因为[产品事实]，所以[消费者利益]"<br>
+          ③ <strong>核心卖点直给</strong> — "[产品名]，[核心卖点]"<br>
+          ④ <strong>数字反差</strong> — "[数字A] vs [数字B]，[结果]"
+        </div>
+        <div class="example-text" id="ex-m-slogan">
+          <span class="ex-title">休足贴范例</span>
+          主推：「<strong>冰凉舒爽 本草解压 舒缓双腿疲劳</strong>」（核心卖点直给）<br><br>
+          备选：① "暴走两万步腿不酸？秘密在这片本草休足贴"（场景+解决方案）<br>
+          ② "因为温泉弱碱排酸+4味本草渗透，所以双腿贴一片就轻快了"（因为+所以）<br>
+          ③ "pH8温泉 vs pH4乳酸，一贴中和，第二天照样逛街"（数字反差）
+        </div>
+        <textarea class="tall" id="f-m-slogan" placeholder="产品口号（主推）+ 可选备选方案" oninput="updateProgress()"></textarea>
+        <select id="f-m-slogan-type" style="margin-top:8px" onchange="updateProgress()">
+          <option value="">-- 选择创作方向 --</option>
+          <option value="场景+解决方案">场景+解决方案</option>
+          <option value="因为+所以">因为+所以</option>
+          <option value="核心卖点直给">核心卖点直给</option>
+          <option value="数字反差">数字反差</option>
+        </select>
+      </div>
+
+      <!-- 新增：产品口播 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">产品口播 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-m-broadcast')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-m-broadcast')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-m-broadcast">
+          <strong>从销售角度组织话术</strong>，用于对消费者进行产品阐述。站在柜台/直播间/货架前，你只有30秒说服一个人。<br>
+          结构建议：<strong>痛点引入 → 产品卖点 → 核心利益 → 行动号召</strong><br>
+          ① 先戳痛点（"你是不是也这样…"）<br>
+          ② 亮出卖点（"我们这个不一样，因为…"）<br>
+          ③ 给出利益（"用了之后你会…"）<br>
+          ④ 推动决策（"今天下单还送…"）
+        </div>
+        <div class="example-text" id="ex-m-broadcast">
+          <span class="ex-title">休足贴范例</span>
+          「你是不是也这样：白天站了一天、逛了一天，晚上躺床上腿酸得翻来覆去睡不着？<br>
+          我们的休足贴跟市面上的不一样——用的是日本别府温泉弱碱矿物+4味本草，贴在腿上就能中和乳酸、缓解酸胀。<br>
+          贴上去不到5分钟就有清凉感，第二天照样逛街、带娃、上班，腿不酸不沉。<br>
+          一盒8片才一杯奶茶钱，今晚就试试，明天走路都轻快。」
+        </div>
+        <textarea class="tall" id="f-m-broadcast" placeholder="30秒销售话术：痛点 → 卖点 → 利益 → 行动" oninput="updateProgress()"></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ 三、产品层 ═══════ -->
+  <div class="section product" id="sec-product">
+    <div class="section-header" onclick="toggleSection('sec-product')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-product"></div>
+        <span class="section-title">产品层</span>
+        <span class="section-subtitle">产品本质 · 原理、技术与使用</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <!-- 新增/修改：作用原理（原"产品功效"改为单一文本框，放在成分前面） -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">作用原理 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-pd-mechanism')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-pd-mechanism')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-pd-mechanism">
+          陈述<strong>产品通过何种方式对人体产生作用</strong>。<br>
+          不是「有什么功效」，而是「为什么有效」——从机制层面说清产品的工作方式。<br>
+          公式：[活性成分/技术] → [作用路径] → [产生的变化]
+        </div>
+        <div class="example-text" id="ex-pd-mechanism">
+          <span class="ex-title">休足贴范例</span>
+          休足贴通过贴敷在腿足皮肤表面，利用温泉弱碱矿物与皮肤接触后产生渗透压差，帮助中和运动后堆积的乳酸，同时艾草、薄荷等本草成分经皮渗透，温经通络、产生清凉感，从而缓解腿足酸胀疲劳。
+        </div>
+        <textarea class="tall" id="f-pd-mechanism" placeholder="产品通过何种方式对人体产生作用：从机制层面说清产品的工作方式" oninput="updateProgress()"></textarea>
+      </div>
+
+      <!-- 核心技术：动态添加 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">核心技术 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-pd-ingredient')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-pd-ingredient')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-pd-ingredient">每项技术写清三个维度：技术/成分名 — 作用（干什么）— 来源/依据（专利号、文献、产地等）</div>
+        <div class="example-text" id="ex-pd-ingredient"><span class="ex-title">休足贴范例</span>① 温泉弱碱矿物 — 中和乳酸，缓解酸胀 — 日本别府温泉提取技术<br>② 艾草提取物 — 温经通络 — 《本草纲目》记载<br>③ 薄荷醇 — 即时清凉 — 天然薄荷提取</div>
+        <div id="ingredient-list"></div>
+        <button type="button" class="btn btn-outline" onclick="addIngredient()" style="margin-top:10px;width:100%;justify-content:center;">＋ 添加核心技术</button>
+      </div>
+
+      <!-- 感官描述：多字段 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">感官描述</span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-pd-sensory')">📐 填写标准</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-pd-sensory">产品可被感知的物理特征，越具体越好——"淡淡草本香"比"好闻"更有用。</div>
+        <div class="multi-row">
+          <input type="text" id="f-pd-color" placeholder="颜色" oninput="updateProgress()">
+          <input type="text" id="f-pd-texture" placeholder="质地" oninput="updateProgress()">
+        </div>
+        <div class="multi-row" style="margin-top:8px">
+          <input type="text" id="f-pd-smell" placeholder="气味" oninput="updateProgress()">
+          <input type="text" id="f-pd-touch" placeholder="触感/温度感" oninput="updateProgress()">
+        </div>
+        <input type="text" id="f-pd-sensory-other" placeholder="其他感官特征（可选）" style="margin-top:8px" oninput="updateProgress()">
+      </div>
+
+      <!-- 包装描述：多字段 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">包装描述</span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-pd-pack')">📐 填写标准</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-pd-pack">包装形式（袋装/盒装/瓶装等）、主色调、设计风格、独立包装/非独立包装。</div>
+        <div class="multi-row">
+          <input type="text" id="f-pd-pack-form" placeholder="包装形式" oninput="updateProgress()">
+          <input type="text" id="f-pd-pack-color" placeholder="主色调" oninput="updateProgress()">
+        </div>
+        <textarea id="f-pd-pack-style" placeholder="设计风格" style="margin-top:8px" oninput="updateProgress()"></textarea>
+        <select id="f-pd-pack-unbox" style="margin-top:8px" onchange="updateProgress()">
+          <option value="">-- 独立包装 / 非独立包装 --</option>
+          <option value="独立包装">独立包装</option>
+          <option value="非独立包装">非独立包装</option>
+        </select>
+      </div>
+
+      <!-- 使用规范 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">使用规范</span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-usage')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-usage')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-s-usage">产品怎么用？使用步骤、频率、用量、注意事项的动作指引</div>
+        <div class="example-text" id="ex-s-usage"><span class="ex-title">休足贴范例</span>睡前清洁腿部皮肤，撕开包装贴于小腿/足底，每次1-2片。建议每次贴敷4-6小时，每天使用1次。运动后可即时使用。</div>
+        <textarea class="tall" id="f-s-usage" placeholder="使用步骤 + 频率 + 用量 + 动作指引" oninput="updateProgress()"></textarea>
+      </div>
+
+      <!-- 注意事项 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">注意事项</span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-notice')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-notice')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-s-notice">安全提示、禁忌人群、过敏提示等</div>
+        <div class="example-text" id="ex-s-notice"><span class="ex-title">休足贴范例</span>① 皮肤破损处禁用 ② 孕妇慎用 ③ 贴敷过程如有不适应立即停止使用 ④ 本品为外用，不可口服</div>
+        <textarea class="tall" id="f-s-notice" placeholder="安全提示 + 禁忌人群 + 过敏提示" oninput="updateProgress()"></textarea>
+      </div>
+
+      <!-- 保存条件 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">保存条件</span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-storage')">📐 填写标准</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-s-storage">保质期与储存方式分开列，确保消费者明确知道能用多久、怎么存放。</div>
+        <input type="text" id="f-s-shelf-life" placeholder="保质期（如：24个月）" oninput="updateProgress()">
+        <textarea id="f-s-storage" placeholder="储存方式（如：请置于阴凉干燥处，避免阳光直射）" style="margin-top:8px" oninput="updateProgress()"></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ 四、市场层 ═══════ -->
+  <div class="section market" id="sec-market">
+    <div class="section-header" onclick="toggleSection('sec-market')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-market"></div>
+        <span class="section-title">市场层</span>
+        <span class="section-subtitle">竞争环境</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <!-- 直接竞品：动态添加（删除间接竞品板块） -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">直接竞品 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-mk-direct')">📐 填写标准</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-mk-direct">同品类、同价格带、同渠道的品牌/产品。每项注明竞品名 + 一句话定位 + 核心优势。</div>
+        <div id="competitor-list"></div>
+        <button type="button" class="btn btn-outline" onclick="addCompetitor()" style="margin-top:10px;width:100%;justify-content:center;">＋ 添加竞品</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ 五、利益层·人群 ═══════ -->
+  <div class="section people" id="sec-people">
+    <div class="section-header" onclick="toggleSection('sec-people')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-people"></div>
+        <span class="section-title">利益层 · 人群</span>
+        <span class="section-subtitle">核心人群</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <details style="margin-bottom:16px;border:1px solid var(--blue-100);border-radius:10px;overflow:hidden">
+        <summary style="padding:12px 16px;background:var(--blue-50);cursor:pointer;font-size:13px;font-weight:600;color:var(--blue-800);user-select:none">
+          💡 怎么填？看这个例子 — 同为50万级大型SUV，三款车的目标人群完全不同
+        </summary>
+        <div style="padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:12px;line-height:1.7" class="people-ref-grid">
+          <div style="border:1px solid var(--gray-200);border-radius:8px;padding:12px">
+            <div style="font-weight:700;color:var(--blue-800);margin-bottom:6px">🚗 问界M9</div>
+            <div><strong>核心人群：</strong>信任华为技术生态、看重智能体验、有商务接待需求的高净值用户</div>
+            <div style="margin-top:6px"><strong>决策逻辑：</strong>智驾能力 → 座舱科技 → 华为品牌背书</div>
+          </div>
+          <div style="border:1px solid var(--gray-200);border-radius:8px;padding:12px">
+            <div style="font-weight:700;color:var(--blue-800);margin-bottom:6px">🚗 极氪9X</div>
+            <div><strong>核心人群：</strong>从BBA和保时捷过来的增换购用户，追求机械素质和驾驶质感，不愿为传统豪华品牌继续付品牌税</div>
+            <div style="margin-top:6px"><strong>决策逻辑：</strong>底盘调校 → 动力参数 → 霸气外观</div>
+          </div>
+          <div style="border:1px solid var(--gray-200);border-radius:8px;padding:12px">
+            <div style="font-weight:700;color:var(--blue-800);margin-bottom:6px">🚗 理想L9</div>
+            <div><strong>核心人群：</strong>有老人有孩子的大家庭奶爸</div>
+            <div style="margin-top:6px"><strong>决策逻辑：</strong>全家人坐进去都满意：老人要舒服 → 孩子要有屏幕看 → 太太要副驾座椅舒服 → 自己要长途不累</div>
+          </div>
+        </div>
+        <div style="padding:0 16px 12px;font-size:12px;color:var(--gray-600)">
+          ⚠️ 关键：品类相同 ≠ 人群相同。必须抓住<strong>核心人群的身份标签</strong>和<strong>决策标准的优先级排序</strong>，拒绝泛泛的"都市白领""注重健康的女性"。
+        </div>
+      </details>
+
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">核心人群 <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-p-who')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-p-who')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-p-who">
+          <strong>不要写"都市白领"、"注重健康的女性"——太泛了。</strong><br>
+          每类人群写清楚：① <strong>具体身份标签</strong>（他们是谁？干什么的？）② <strong>从哪里来</strong>（以前用什么替代方案？）③ <strong>核心诉求</strong>（想要什么？不愿忍受什么？）
+        </div>
+        <div class="example-text" id="ex-p-who"><span class="ex-title">休足贴范例</span><strong>核心人群：</strong>长时间站立/走动的职业人群（导购、护士、旅行爱好者、健身族）。「没有时间专门养生」，以前最多泡个脚、躺一躺，追求「贴上去就能感受到变化」的效率型产品。</div>
+
+        <div id="persona-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <button type="button" class="btn btn-outline" onclick="addPersona()" style="margin-top:12px;width:100%;justify-content:center;">＋ 添加人群</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ 六、利益层·场景 ═══════ -->
+  <div class="section scene" id="sec-scene">
+    <div class="section-header" onclick="toggleSection('sec-scene')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-scene"></div>
+        <span class="section-title">利益层 · 场景</span>
+        <span class="section-subtitle">目标人群 × 使用场景 × 产品角色</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <div class="standard-text show" style="margin-bottom:16px">
+        <strong>回答一个问题：谁，在什么场景下，需要我的产品？</strong><br>
+        专注于画面感——让读到的人能<strong>看到那个瞬间</strong>。
+      </div>
+
+      <div id="scene-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <button type="button" class="btn btn-outline" onclick="addScene()" style="margin-top:12px;width:100%;justify-content:center;">＋ 添加场景</button>
+
+    </div>
+  </div>
+
+  <!-- ═══════ 七、利益层·核心价值 ═══════ -->
+  <div class="section value" id="sec-value">
+    <div class="section-header" onclick="toggleSection('sec-value')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-value"></div>
+        <span class="section-title">利益层 · 核心价值</span>
+        <span class="section-subtitle">品类基本盘（POP）＋ 差异点（POD）</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <!-- POP：选填 — 独立板块 -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">POP — 品类基本盘 <span class="optional">（选填）</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-v-pop')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-v-pop')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-v-pop">没有就不能入场的门槛。逐项添加（建议3个以内）。<strong>不要写差异点</strong>——这是入场券，做不到这些，品类都不算入局。</div>
+        <div class="example-text" id="ex-v-pop"><span class="ex-title">休足贴范例</span>① 贴敷后能产生清凉/舒缓感 &nbsp; ② 粘贴牢固不脱落 &nbsp; ③ 撕下无残留不伤肤</div>
+        <div id="pop-list"></div>
+        <button type="button" class="btn btn-outline" onclick="addPOP()" style="margin-top:10px;width:100%;justify-content:center;">＋ 添加POP</button>
+      </div>
+
+      <!-- POD：独立板块（必填） -->
+      <div class="field-group">
+        <div class="field-header">
+          <span class="field-label">POD — 差异点 + RTB <span class="required">*</span></span>
+          <div class="field-hint">
+            <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-v-pod')">📐 填写标准</button>
+            <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-v-pod')">💡 查看范例</button>
+          </div>
+        </div>
+        <div class="standard-text" id="std-v-pod">
+          消费者选你不选竞品的理由。每个POD必须匹配至少1个RTB，形成「利益→证据」闭环。<br>
+          <strong>差异描述用FAB结构一句话说清</strong>（含利益点），并注明 vs 竞品，绑定可验证证据。
+        </div>
+        <div class="example-text" id="ex-v-pod">
+          <span class="ex-title">休足贴范例</span>
+          <strong>POD-1：温泉弱碱排酸</strong>（特征：pH8.0温泉弱碱矿物 → 优势：中和运动后乳酸 → 利益：第二天腿不酸照样逛街）<br>
+          vs 竞品：市面足贴多靠清凉剂短暂麻痹感 → RTB：别府温泉矿物检测报告 / 运动后pH试纸对比
+        </div>
+        <div id="pod-list" style="display:flex;flex-direction:column;gap:16px;"></div>
+        <div style="font-size:11px;color:var(--gray-400);margin-top:6px;text-align:center;">⬆ 按优先级从高到低排列</div>
+        <button type="button" class="btn btn-outline" onclick="addPOD()" style="margin-top:8px;width:100%;justify-content:center;">＋ 添加POD</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ 八、常见问题解答 Q&A ═══════ -->
+  <div class="section qa" id="sec-qa">
+    <div class="section-header" onclick="toggleSection('sec-qa')">
+      <div class="section-title-wrap">
+        <div class="section-dot dot-qa"></div>
+        <span class="section-title">常见问题解答</span>
+        <span class="section-subtitle">Q&A · 消费者高频疑问</span>
+      </div>
+      <span class="section-toggle">▾</span>
+    </div>
+    <div class="section-body">
+
+      <div class="standard-text show" style="margin-bottom:16px">
+        <strong>预判消费者可能提出的问题</strong>，提前准备好标准答案。<br>
+        问题来源：客服高频提问、评论区常见质疑、使用中容易遇到的困惑。
+      </div>
+
+      <div id="qa-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <button type="button" class="btn btn-outline" onclick="addQA()" style="margin-top:12px;width:100%;justify-content:center;">＋ 添加问答</button>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal">
+    <h2>📋 产品Brief 摘要预览</h2>
+    <div class="preview-content" id="preview-content"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="copyPreview()">📋 复制摘要</button>
+      <button class="btn btn-ghost" onclick="closePreview()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Markdown Import Modal -->
+<div class="modal-overlay" id="md-import-modal">
+  <div class="modal">
+    <h2>📥 导入 Markdown</h2>
+    <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">粘贴从本工具导出的 Markdown 内容，系统将自动解析并填充到对应字段。动态项目（技术、人群、场景等）会自动创建。</p>
+    <textarea class="md-area" id="md-import-text" placeholder="在此粘贴 Markdown 内容..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="doImportMarkdown()">📥 确认导入</button>
+      <button class="btn btn-ghost" onclick="closeMdImport()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Markdown Export Modal -->
+<div class="modal-overlay" id="md-export-modal">
+  <div class="modal">
+    <h2>📝 导出 Markdown</h2>
+    <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">以下为当前填写内容的 Markdown 格式，可直接复制使用，或保存为 .md 文件后通过「导入 Markdown」恢复。</p>
+    <textarea class="md-area" id="md-export-text" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="copyMarkdown()">📋 复制内容</button>
+      <button class="btn btn-outline" onclick="downloadMarkdown()">💾 下载 .md 文件</button>
+      <button class="btn btn-ghost" onclick="closeMdExport()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Helpers ──
+function getVal(id) { return (document.getElementById(id)?.value || '').trim(); }
+function escapeHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+function toggleSection(id) { document.getElementById(id).classList.toggle('collapsed'); }
+function toggleHint(btn, targetId) { document.getElementById(targetId).classList.toggle('show'); }
+
+// ── Field IDs ──
+function getFieldIds() {
+  const ids = [
+    'f-s-name','f-s-category','f-s-spec','f-s-role-1','f-s-role-2','f-s-role-reason',
+    'f-pd-mechanism',
+    'f-pd-color','f-pd-texture','f-pd-smell','f-pd-touch','f-pd-sensory-other',
+    'f-pd-pack-form','f-pd-pack-color','f-pd-pack-style','f-pd-pack-unbox',
+    'f-s-usage','f-s-notice','f-s-shelf-life','f-s-storage',
+    'f-m-slogan','f-m-slogan-type','f-m-broadcast'
+  ];
+  // Ingredients
+  document.querySelectorAll('[id^="f-ing-"][id$="-name"]').forEach(el => {
+    const n = el.id.match(/^f-ing-(\d+)-name$/)[1];
+    ids.push('f-ing-'+n+'-name','f-ing-'+n+'-func','f-ing-'+n+'-source');
+  });
+  // Personas
+  document.querySelectorAll('[id^="f-p-who-"]').forEach(el => ids.push(el.id));
+  // Scenes
+  document.querySelectorAll('[id^="f-scene-"]').forEach(el => ids.push(el.id));
+  // POPs
+  document.querySelectorAll('[id^="f-v-pop-"]').forEach(el => ids.push(el.id));
+  // PODs
+  document.querySelectorAll('[id^="f-v-pod"][id$="-name"]').forEach(el => {
+    const n = el.id.match(/^f-v-pod(\d+)-name$/)[1];
+    ids.push('f-v-pod'+n+'-name','f-v-pod'+n+'-desc','f-v-pod'+n+'-comp','f-v-pod'+n+'-rtb');
+  });
+  // Competitors
+  document.querySelectorAll('[id^="f-comp-"][id$="-name"]').forEach(el => {
+    const n = el.id.match(/^f-comp-(\d+)-name$/)[1];
+    ids.push('f-comp-'+n+'-name','f-comp-'+n+'-position','f-comp-'+n+'-advantage');
+  });
+  // QA items
+  document.querySelectorAll('[id^="f-qa-"][id$="-q"]').forEach(el => {
+    const n = el.id.match(/^f-qa-(\d+)-q$/)[1];
+    ids.push('f-qa-'+n+'-q','f-qa-'+n+'-a');
+  });
+  return ids;
+}
+
+// ── Progress ──
+function updateProgress() {
+  let filled = 0, totalEditable = 0;
+  getFieldIds().forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    totalEditable++;
+    if (el.value.trim()) filled++;
+  });
+  saveToLocal();
+  const pct = totalEditable ? Math.round((filled / totalEditable) * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  const label = document.getElementById('progress-label');
+  if (pct === 100) label.textContent = '✅ 全部完成';
+  else if (pct >= 80) label.textContent = '接近完成';
+  else if (pct >= 50) label.textContent = '进行中';
+  else label.textContent = '填写进度';
+}
+
+const STORAGE_KEY = 'caishifuling_brief_v6';
+
+// Save: store both field values AND dynamic item structure
+function saveToLocal() {
+  var data = { fields: {}, struct: {} };
+  getFieldIds().forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) data.fields[id] = el.value;
+  });
+  // Save counts so we can rebuild on reload
+  data.struct.ingCount = window.ingCount || 0;
+  data.struct.personaCount = window.personaCount || 0;
+  data.struct.sceneCount = window.sceneCount || 0;
+  data.struct.popCount = window.popCount || 0;
+  data.struct.podCount = window.podCount || 0;
+  data.struct.compCount = window.compCount || 0;
+  data.struct.qaCount = window.qaCount || 0;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// Load: rebuild dynamic items first, then populate values
+function loadFromLocal() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    var data = JSON.parse(raw);
+    if (!data.fields) return false;
+
+    // Step 1: Clear and rebuild dynamic items
+    var struct = data.struct || {};
+    clearDynamicItems();
+
+    // Rebuild from stored counts
+    for (var i = 0; i < (struct.ingCount || 1); i++) addIngredientSilent('', '', '');
+    for (var i = 0; i < (struct.personaCount || 1); i++) addPersonaSilent('');
+    for (var i = 0; i < (struct.sceneCount || 1); i++) addSceneSilent('');
+    for (var i = 0; i < (struct.compCount || 1); i++) addCompetitorSilent('', '', '');
+    for (var i = 0; i < (struct.popCount || 0); i++) addPOPSilent('');
+    for (var i = 0; i < (struct.podCount || 1); i++) addPODSilent('', '', '', '');
+    for (var i = 0; i < (struct.qaCount || 0); i++) addQASilent('', '');
+
+    // Step 2: Populate field values
+    var hasData = false;
+    getFieldIds().forEach(function(id) {
+      if (data.fields[id] !== undefined) {
+        var el = document.getElementById(id);
+        if (el && el.value !== data.fields[id]) {
+          el.value = data.fields[id];
+          hasData = true;
+        }
+      }
+    });
+    return hasData;
+  } catch(e) { console.error('load error:', e); return false; }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Collect all dynamic items data for export ──
+function collectIngredients() {
+  const items = [];
+  document.querySelectorAll('[id^="f-ing-"][id$="-name"]').forEach(el => {
+    const n = el.id.match(/^f-ing-(\d+)-name$/)[1];
+    const name = getVal('f-ing-'+n+'-name');
+    if (name) items.push({name: name, func: getVal('f-ing-'+n+'-func'), source: getVal('f-ing-'+n+'-source')});
+  });
+  return items;
+}
+function collectPersonas() {
+  const items = [];
+  document.querySelectorAll('[id^="f-p-who-"]').forEach(el => {
+    const v = el.value.trim();
+    if (v) items.push(v);
+  });
+  return items;
+}
+function collectScenes() {
+  const items = [];
+  document.querySelectorAll('[id^="f-scene-"]').forEach(el => {
+    const v = el.value.trim();
+    if (v) items.push(v);
+  });
+  return items;
+}
+function collectPOPs() {
+  const items = [];
+  document.querySelectorAll('[id^="f-v-pop-"]').forEach(el => {
+    const v = el.value.trim();
+    if (v) items.push(v);
+  });
+  return items;
+}
+function collectPODs() {
+  const items = [];
+  document.querySelectorAll('[id^="f-v-pod"][id$="-name"]').forEach(el => {
+    const n = el.id.match(/^f-v-pod(\d+)-name$/)[1];
+    const name = getVal('f-v-pod'+n+'-name');
+    if (name) items.push({
+      name: name, desc: getVal('f-v-pod'+n+'-desc'),
+      comp: getVal('f-v-pod'+n+'-comp'), rtb: getVal('f-v-pod'+n+'-rtb')
+    });
+  });
+  return items;
+}
+function collectCompetitors() {
+  const items = [];
+  document.querySelectorAll('[id^="f-comp-"][id$="-name"]').forEach(el => {
+    const n = el.id.match(/^f-comp-(\d+)-name$/)[1];
+    const name = getVal('f-comp-'+n+'-name');
+    if (name) items.push({name: name, position: getVal('f-comp-'+n+'-position'), advantage: getVal('f-comp-'+n+'-advantage')});
+  });
+  return items;
+}
+function collectQA() {
+  const items = [];
+  document.querySelectorAll('[id^="f-qa-"][id$="-q"]').forEach(el => {
+    const n = el.id.match(/^f-qa-(\d+)-q$/)[1];
+    const q = getVal('f-qa-'+n+'-q');
+    const a = getVal('f-qa-'+n+'-a');
+    if (q || a) items.push({q: q, a: a});
+  });
+  return items;
+}
+
+// ── Build export sections for PDF and preview ──
+function buildExportSections() {
+  const sections = [];
+
+  // 一、产品定位
+  const sItems = [];
+  if (getVal('f-s-name')) sItems.push({label:'产品名称', value:getVal('f-s-name')});
+  if (getVal('f-s-category')) sItems.push({label:'品类定义', value:getVal('f-s-category')});
+  if (getVal('f-s-spec')) sItems.push({label:'产品规格', value:getVal('f-s-spec')});
+  const role = [getVal('f-s-role-1'),getVal('f-s-role-2')].filter(Boolean).join(' + ');
+  if (role) sItems.push({label:'战略角色', value:role + (getVal('f-s-role-reason')?'\n理由：'+getVal('f-s-role-reason'):'')});
+  sections.push({title:'一、产品定位', color:'#1D9E75', items:sItems, content:sItems.length>0});
+
+  // 二、心智层
+  const mItems = [];
+  if (getVal('f-m-slogan')) {
+    mItems.push({label:'产品口号', value:getVal('f-m-slogan') + (getVal('f-m-slogan-type')?'\n创作方向：'+getVal('f-m-slogan-type'):'')});
+  }
+  if (getVal('f-m-broadcast')) mItems.push({label:'产品口播', value:getVal('f-m-broadcast')});
+  sections.push({title:'二、心智层', color:'#BA7517', items:mItems, content:mItems.length>0});
+
+  // 三、产品本质与使用
+  const pItems = [];
+  if (getVal('f-pd-mechanism')) pItems.push({label:'作用原理', value:getVal('f-pd-mechanism')});
+
+  let ingText = '';
+  const ingredients = collectIngredients();
+  ingredients.forEach((ing, i) => {
+    ingText += (i+1) + '. ' + ing.name + (ing.func?' — '+ing.func:'') + (ing.source?' — '+ing.source:'') + '\n';
+  });
+  if (ingText) pItems.push({label:'核心技术', value:ingText.trim()});
+
+  let sensoryText = '';
+  if (getVal('f-pd-color')) sensoryText += '颜色：' + getVal('f-pd-color') + '\n';
+  if (getVal('f-pd-texture')) sensoryText += '质地：' + getVal('f-pd-texture') + '\n';
+  if (getVal('f-pd-smell')) sensoryText += '气味：' + getVal('f-pd-smell') + '\n';
+  if (getVal('f-pd-touch')) sensoryText += '触感/温度感：' + getVal('f-pd-touch') + '\n';
+  if (getVal('f-pd-sensory-other')) sensoryText += '其他：' + getVal('f-pd-sensory-other');
+  if (sensoryText) pItems.push({label:'感官描述', value:sensoryText.trim()});
+
+  let packText = '';
+  if (getVal('f-pd-pack-form')) packText += '包装形式：' + getVal('f-pd-pack-form') + '\n';
+  if (getVal('f-pd-pack-color')) packText += '主色调：' + getVal('f-pd-pack-color') + '\n';
+  if (getVal('f-pd-pack-style')) packText += '设计风格：' + getVal('f-pd-pack-style') + '\n';
+  if (getVal('f-pd-pack-unbox')) packText += '独立/非独立包装：' + getVal('f-pd-pack-unbox');
+  if (packText) pItems.push({label:'包装描述', value:packText.trim()});
+
+  if (getVal('f-s-usage')) pItems.push({label:'使用规范', value:getVal('f-s-usage')});
+  if (getVal('f-s-notice')) pItems.push({label:'注意事项', value:getVal('f-s-notice')});
+  let storageText = '';
+  if (getVal('f-s-shelf-life')) storageText += '保质期：' + getVal('f-s-shelf-life') + '\n';
+  if (getVal('f-s-storage')) storageText += '储存方式：' + getVal('f-s-storage');
+  if (storageText) pItems.push({label:'保存条件', value:storageText.trim()});
+
+  sections.push({title:'三、产品本质与使用', color:'#2E90D1', items:pItems, content:pItems.length>0});
+
+  // 四、市场环境（只有直接竞品）
+  const mkItems = [];
+  let compText = '';
+  const competitors = collectCompetitors();
+  competitors.forEach((c, i) => {
+    compText += (i+1) + '. ' + c.name + (c.position?' — '+c.position:'') + (c.advantage?'（优势：'+c.advantage+'）':'') + '\n';
+  });
+  if (compText) mkItems.push({label:'直接竞品', value:compText.trim()});
+  sections.push({title:'四、市场环境', color:'#C94A6D', items:mkItems, content:mkItems.length>0});
+
+  // 五、目标人群
+  const peopleItems = [];
+  const personaList = collectPersonas();
+  personaList.forEach((p, i) => peopleItems.push({label:'核心人群 ' + (i+1), value:p}));
+  sections.push({title:'五、目标人群', color:'#378ADD', items:peopleItems, content:peopleItems.length>0});
+
+  // 六、使用场景
+  const sceneItems = [];
+  const sceneList = collectScenes();
+  sceneList.forEach((s, i) => sceneItems.push({label:'场景 ' + (i+1), value:s}));
+  sections.push({title:'六、使用场景', color:'#378ADD', items:sceneItems, content:sceneItems.length>0});
+
+  // 七、核心价值体系
+  const vItems = [];
+  const popList = collectPOPs();
+  if (popList.length) vItems.push({label:'POP — 品类基本盘', value:popList.map((p,i)=>(i+1)+'. '+p).join('\n')});
+
+  const podList = collectPODs();
+  podList.forEach((pod, i) => {
+    let combined = '';
+    if (pod.desc) combined += 'FAB差异描述：' + pod.desc + '\n';
+    if (pod.comp) combined += 'vs竞品：' + pod.comp + '\n';
+    if (pod.rtb) combined += 'RTB证据：' + pod.rtb;
+    if (combined) vItems.push({label:'POD-' + (i+1) + '：' + pod.name, value:combined.trim()});
+  });
+  sections.push({title:'七、核心价值体系', color:'#639922', items:vItems, content:vItems.length>0});
+
+  // 八、常见问题解答
+  const qaItems = collectQA();
+  const qaFields = qaItems.filter(item => item.q || item.a).map((item, i) => ({
+    label: 'Q' + (i+1) + '：' + (item.q || '(未填写问题)'),
+    value: item.a || '(未填写答案)'
+  }));
+  sections.push({title:'八、常见问题解答', color:'#534AB7', items:qaFields, content:qaFields.length>0});
+
+  return sections;
+}
+
+// ── Export PDF ──
+function exportPDF() {
+  const pname = getVal('f-s-name') || '未命名产品';
+  toast('📄 正在生成 PDF...');
+
+  const sections = buildExportSections();
+
+  // Build HTML
+  var html = '<div style="font-family:-apple-system,PingFang SC,Microsoft YaHei,sans-serif;font-size:13px;line-height:1.65;color:#333;width:640px;margin:0 auto;background:#fff;padding:10px 0;">';
+
+  html += '<div style="text-align:center;padding:20px 0 16px;margin-bottom:18px;border-bottom:2px solid #534AB7;">';
+  html += '<h1 style="font-size:19px;color:#3C3489;margin-bottom:5px;letter-spacing:2px;">蔡氏福宁 · 产品brief</h1>';
+  html += '<p style="font-size:15px;color:#1D9E75;margin:4px 0;font-weight:600;">' + escapeHtml(pname) + '</p>';
+  html += '<p style="font-size:10px;color:#888;">' + new Date().toLocaleDateString('zh-CN') + '</p>';
+  html += '</div>';
+
+  sections.forEach(function(sec) {
+    if (!sec.content) return;
+    html += '<div style="margin-bottom:14px;">';
+    html += '<h2 style="font-size:15px;color:' + sec.color + ';margin-bottom:5px;padding-bottom:2px;border-bottom:1px solid #d5d5d5;">' + escapeHtml(sec.title) + '</h2>';
+    html += '<div style="padding-left:4px;">';
+    sec.items.forEach(function(item) {
+      html += '<div style="margin-bottom:8px;">';
+      html += '<div style="font-weight:600;font-size:11px;color:#888;margin-bottom:2px;">' + escapeHtml(item.label) + '</div>';
+      html += '<div style="font-size:13px;white-space:pre-wrap;line-height:1.65;">' + escapeHtml(item.value).replace(/\n/g, '<br>') + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  html += '<div style="text-align:center;margin-top:18px;padding:10px 0 16px;border-top:1px solid #e0e0e0;font-size:10px;color:#bbb;">蔡氏福宁 · 产品brief · ' + new Date().toISOString().slice(0, 10) + '</div>';
+  html += '</div>';
+
+  // Render container
+  var container = document.createElement('div');
+  container.id = 'pdf-render-target';
+  container.style.cssText = 'position:fixed;left:0;top:0;width:660px;height:auto;z-index:99998;background:#fff;';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  // Loading
+  var loader = document.createElement('div');
+  loader.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.85);font-size:16px;color:#534AB7;pointer-events:none;';
+  loader.textContent = '⏳ 正在生成 PDF，请稍候…';
+  document.body.appendChild(loader);
+
+  setTimeout(function() {
+    // Resolve jsPDF
+    var JsPDF = null;
+    if (typeof jspdf !== 'undefined' && jspdf.jsPDF) JsPDF = jspdf.jsPDF;
+    else if (typeof window !== 'undefined' && window.jspdf && window.jspdf.jsPDF) JsPDF = window.jspdf.jsPDF;
+    if (!JsPDF) { cleanup('⚠️ jsPDF 未加载'); return; }
+    if (typeof html2canvas === 'undefined') { cleanup('⚠️ html2canvas 未加载'); return; }
+
+    html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      allowTaint: true,
+      windowWidth: 660
+    }).then(function(canvas) {
+      var pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      var pageW = pdf.internal.pageSize.getWidth();
+      var pageH = pdf.internal.pageSize.getHeight();
+      var margin = 8;
+
+      var imgW = pageW - margin * 2;
+      var pxPerMm = canvas.width / imgW;
+      var pageHPx = (pageH - margin * 2) * pxPerMm;
+      var totalPages = Math.ceil(canvas.height / pageHPx);
+
+      for (var i = 0; i < totalPages; i++) {
+        if (i > 0) pdf.addPage();
+        var sy = i * pageHPx;
+        var sh = Math.min(pageHPx, canvas.height - sy);
+
+        var slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        slice.height = sh;
+        slice.getContext('2d').drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+
+        var sliceHmm = (sh / canvas.width) * imgW;
+        pdf.addImage(slice.toDataURL('image/jpeg', 0.90), 'JPEG', margin, margin, imgW, sliceHmm);
+      }
+
+      pdf.save('蔡氏福宁_brief_' + pname + '_' + new Date().toISOString().slice(0, 10) + '.pdf');
+      cleanup('✅ PDF 已下载（共 ' + totalPages + ' 页）');
+    }).catch(function(err) {
+      console.error(err);
+      cleanup('⚠️ 渲染失败');
+    });
+
+    function cleanup(msg) {
+      if (document.body.contains(loader)) document.body.removeChild(loader);
+      if (document.body.contains(container)) document.body.removeChild(container);
+      if (msg) toast(msg);
+    }
+  }, 400);
+}
+
+// ── Preview ──
+function showPreview() {
+  const sections = buildExportSections();
+  let html = '';
+  sections.forEach(sec => {
+    if (!sec.content) return;
+    html += '<h3>' + escapeHtml(sec.title) + '</h3>';
+    sec.items.forEach(item => {
+      html += '<div class="preview-field"><div class="preview-field-label">' + escapeHtml(item.label) + '</div><div class="preview-field-value">' + escapeHtml(item.value).replace(/\n/g,'<br>') + '</div></div>';
+    });
+  });
+
+  document.getElementById('preview-content').innerHTML = html || '<em style="color:#888">暂无内容，请先填写表单</em>';
+  document.getElementById('preview-modal').classList.add('show');
+}
+
+// ── Markdown Export ──
+function exportMarkdown() {
+  const pname = getVal('f-s-name') || '未命名产品';
+  const sections = buildExportSections();
+  let md = '# 蔡氏福宁 · 产品brief：' + pname + '\n\n';
+  md += '> 导出日期：' + new Date().toLocaleDateString('zh-CN') + '\n\n';
+
+  sections.forEach(sec => {
+    if (!sec.content) return;
+    md += '## ' + sec.title + '\n\n';
+    sec.items.forEach(item => {
+      md += '### ' + item.label + '\n\n';
+      md += item.value + '\n\n';
+    });
+  });
+
+  document.getElementById('md-export-text').value = md;
+  document.getElementById('md-export-modal').classList.add('show');
+}
+
+function copyMarkdown() {
+  const text = document.getElementById('md-export-text').value;
+  navigator.clipboard.writeText(text).then(() => toast('📋 Markdown 已复制到剪贴板'));
+}
+
+function downloadMarkdown() {
+  const pname = getVal('f-s-name') || '未命名产品';
+  const text = document.getElementById('md-export-text').value;
+  const blob = new Blob([text], {type: 'text/markdown;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '蔡氏福宁_brief_' + pname + '_' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('💾 Markdown 文件已下载');
+}
+function closeMdExport() { document.getElementById('md-export-modal').classList.remove('show'); }
+
+// ── Markdown Import ──
+function showImportMarkdown() {
+  document.getElementById('md-import-text').value = '';
+  document.getElementById('md-import-modal').classList.add('show');
+}
+function closeMdImport() { document.getElementById('md-import-modal').classList.remove('show'); }
+
+function doImportMarkdown() {
+  const text = document.getElementById('md-import-text').value.trim();
+  if (!text) { toast('⚠️ 请先粘贴 Markdown 内容'); return; }
+
+  try {
+    // Clear existing dynamic items
+    clearDynamicItems();
+    parseAndFillMarkdown(text);
+    updateProgress();
+    closeMdImport();
+    toast('✅ Markdown 导入成功');
+  } catch(e) {
+    console.error('Import error:', e);
+    toast('⚠️ 导入失败：' + e.message);
+  }
+}
+
+function clearDynamicItems() {
+  document.getElementById('ingredient-list').innerHTML = '';
+  document.getElementById('persona-list').innerHTML = '';
+  document.getElementById('scene-list').innerHTML = '';
+  document.getElementById('pop-list').innerHTML = '';
+  document.getElementById('pod-list').innerHTML = '';
+  document.getElementById('qa-list').innerHTML = '';
+  document.getElementById('competitor-list').innerHTML = '';
+  // Reset counters
+  window.ingCount = 0;
+  window.personaCount = 0;
+  window.sceneCount = 0;
+  window.popCount = 0;
+  window.podCount = 0;
+  window.qaCount = 0;
+  window.compCount = 0;
+}
+
+function parseAndFillMarkdown(md) {
+  // Parse sections using ## headers
+  const sectionPattern = /## (.+)\n\n([\s\S]*?)(?=\n## |$)/g;
+  let match;
+  const fieldMap = {};
+
+  while ((match = sectionPattern.exec(md)) !== null) {
+    const secTitle = match[1].trim();
+    const secContent = match[2].trim();
+
+    // Parse subsections (### headers)
+    const subPattern = /### (.+)\n\n([\s\S]*?)(?=\n### |$)/g;
+    let subMatch;
+    const subs = [];
+
+    while ((subMatch = subPattern.exec(secContent)) !== null) {
+      subs.push({label: subMatch[1].trim(), value: subMatch[2].trim()});
+    }
+
+    // Map to fields based on section title
+    if (secTitle.includes('产品定位') || secTitle.includes('战略层')) {
+      subs.forEach(sub => {
+        if (sub.label.includes('产品名称')) setField('f-s-name', sub.value);
+        else if (sub.label.includes('品类定义')) setField('f-s-category', sub.value);
+        else if (sub.label.includes('产品规格')) setField('f-s-spec', sub.value);
+        else if (sub.label.includes('战略角色')) {
+          const v = sub.value;
+          // Try to extract roles
+          const parts = v.split('\n');
+          const roleLine = parts[0];
+          if (roleLine.includes('引流款')) setField('f-s-role-1', '引流款');
+          else if (roleLine.includes('利润款')) setField('f-s-role-1', '利润款');
+          else if (roleLine.includes('形象款')) setField('f-s-role-1', '形象款');
+          else if (roleLine.includes('卡位款')) setField('f-s-role-1', '卡位款');
+          // Second role
+          if (roleLine.includes('+') && roleLine.includes('利润款') && roleLine.includes('引流款')) setField('f-s-role-2', '利润款');
+          else if (roleLine.includes('+') && roleLine.includes('引流款') && roleLine.includes('利润款')) setField('f-s-role-2', '利润款');
+          else if (roleLine.includes('利润款') && !setField) {}
+          // Reason
+          const reasonLine = parts.find(p => p.includes('理由'));
+          if (reasonLine) setField('f-s-role-reason', reasonLine.replace(/.*理由[：:]\s*/, ''));
+        }
+      });
+    }
+    else if (secTitle.includes('心智层')) {
+      subs.forEach(sub => {
+        if (sub.label.includes('产品口号')) {
+          const parts = sub.value.split(/创作方向[：:]/);
+          setField('f-m-slogan', parts[0].trim());
+          if (parts[1]) setField('f-m-slogan-type', parts[1].trim());
+        }
+        else if (sub.label.includes('产品口播')) setField('f-m-broadcast', sub.value);
+      });
+    }
+    else if (secTitle.includes('产品本质') || secTitle.includes('产品层')) {
+      subs.forEach(sub => {
+        if (sub.label.includes('作用原理')) setField('f-pd-mechanism', sub.value);
+        else if (sub.label.includes('核心成分') || sub.label.includes('核心技术') || sub.label.includes('配方') || sub.label.includes('技术原理')) {
+          // Parse ingredients: "1. name — func — source" format
+          const lines = sub.value.split('\n').filter(l => l.trim());
+          lines.forEach(line => {
+            const m2 = line.match(/^\d+\.\s*(.+)/);
+            if (m2) {
+              const parts = m2[1].split(' — ');
+              addIngredientSilent(parts[0].trim(), parts[1]?.trim() || '', parts[2]?.trim() || '');
+            }
+          });
+        }
+        else if (sub.label.includes('感官描述')) {
+          const lines = sub.value.split('\n');
+          lines.forEach(line => {
+            const m3 = line.match(/^(.+?)[：:]\s*(.+)$/);
+            if (m3) {
+              if (m3[1].includes('颜色')) setField('f-pd-color', m3[2]);
+              else if (m3[1].includes('质地')) setField('f-pd-texture', m3[2]);
+              else if (m3[1].includes('气味')) setField('f-pd-smell', m3[2]);
+              else if (m3[1].includes('触感')) setField('f-pd-touch', m3[2]);
+              else if (m3[1].includes('其他')) setField('f-pd-sensory-other', m3[2]);
+            }
+          });
+        }
+        else if (sub.label.includes('包装描述')) {
+          const lines = sub.value.split('\n');
+          lines.forEach(line => {
+            const m3 = line.match(/^(.+?)[：:]\s*(.+)$/);
+            if (m3) {
+              if (m3[1].includes('包装形式')) setField('f-pd-pack-form', m3[2]);
+              else if (m3[1].includes('主色调')) setField('f-pd-pack-color', m3[2]);
+              else if (m3[1].includes('设计风格')) setField('f-pd-pack-style', m3[2]);
+              else if (m3[1].includes('独立')) setField('f-pd-pack-unbox', m3[2]);
+            }
+          });
+        }
+        else if (sub.label.includes('使用规范')) setField('f-s-usage', sub.value);
+        else if (sub.label.includes('注意事项')) setField('f-s-notice', sub.value);
+        else if (sub.label.includes('保存条件')) {
+          const lines = sub.value.split('\n');
+          lines.forEach(line => {
+            const m3 = line.match(/^(.+?)[：:]\s*(.+)$/);
+            if (m3) {
+              if (m3[1].includes('保质期')) setField('f-s-shelf-life', m3[2]);
+              else if (m3[1].includes('储存')) setField('f-s-storage', m3[2]);
+            }
+          });
+        }
+      });
+    }
+    else if (secTitle.includes('市场环境') || secTitle.includes('市场层')) {
+      subs.forEach(sub => {
+        if (sub.label.includes('直接竞品')) {
+          const lines = sub.value.split('\n').filter(l => l.trim());
+          lines.forEach(line => {
+            const m2 = line.match(/^\d+\.\s*(.+)/);
+            if (m2) {
+              const text = m2[1];
+              const nameMatch = text.match(/^(.+?)(?:\s*—\s*|\s*（优势[：:]?\s*)/);
+              const name = nameMatch ? nameMatch[1].trim() : text;
+              const posMatch = text.match(/—\s*(.+?)(?:\s*（优势|$)/);
+              const position = posMatch ? posMatch[1].trim() : '';
+              const advMatch = text.match(/优势[：:]?\s*(.+?)）?$/);
+              const advantage = advMatch ? advMatch[1].replace(/）$/, '').trim() : '';
+              addCompetitorSilent(name, position, advantage);
+            }
+          });
+        }
+      });
+    }
+    else if (secTitle.includes('目标人群') || secTitle.includes('人群')) {
+      subs.forEach(sub => {
+        if (sub.value) addPersonaSilent(sub.value);
+      });
+    }
+    else if (secTitle.includes('使用场景') || secTitle.includes('场景')) {
+      subs.forEach(sub => {
+        if (sub.value) addSceneSilent(sub.value);
+      });
+    }
+    else if (secTitle.includes('核心价值')) {
+      subs.forEach(sub => {
+        if (sub.label.includes('POP') || sub.label.includes('品类基本盘')) {
+          const lines = sub.value.split('\n').filter(l => l.trim());
+          lines.forEach(line => {
+            const m2 = line.match(/^\d+\.\s*(.+)/);
+            if (m2) addPOPSilent(m2[1].trim());
+          });
+        }
+        else if (sub.label.includes('POD')) {
+          const podLines = sub.value.split('\n');
+          const nameMatch = sub.label.match(/POD-\d+[：:]\s*(.+)/);
+          const podName = nameMatch ? nameMatch[1] : 'POD';
+          let desc = '', comp = '', rtb = '';
+          podLines.forEach(line => {
+            if (line.includes('FAB差异描述') || line.includes('差异描述')) desc = line.replace(/.*描述[：:]\s*/, '').trim();
+            else if (line.includes('vs竞品')) comp = line.replace(/.*vs竞品[：:]\s*/, '').trim();
+            else if (line.includes('RTB证据')) rtb = line.replace(/.*RTB证据[：:]\s*/, '').trim();
+            else if (line.trim() && !desc && !comp && !rtb) desc = line.trim();
+          });
+          addPODSilent(podName, desc, comp, rtb);
+        }
+      });
+    }
+    else if (secTitle.includes('常见问题') || secTitle.includes('Q&A')) {
+      subs.forEach(sub => {
+        const qMatch = sub.label.match(/Q\d+[：:]\s*(.+)/);
+        const q = qMatch ? qMatch[1] : '';
+        addQASilent(q, sub.value);
+      });
+    }
+  }
+}
+
+function setField(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+// ── Dynamic: Ingredients ──
+window.ingCount = 0;
+function addIngredient() {
+  window.ingCount = (window.ingCount || 0) + 1;
+  renderIngredient(window.ingCount, '', '', '');
+  updateProgress();
+}
+function addIngredientSilent(name, func, source) {
+  window.ingCount = (window.ingCount || 0) + 1;
+  renderIngredient(window.ingCount, name, func, source);
+}
+function renderIngredient(idx, name, func, source) {
+  const html = '<div class="item-card ingredient-item" data-idx="' + idx + '">' +
+    '<div class="item-card-header">' +
+    '<span class="item-card-label" style="color:var(--sky-800)">📌 技术' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
+    (idx>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
+    '</div><div class="item-card-fields">' +
+    '<input type="text" id="f-ing-' + idx + '-name" placeholder="技术/成分名称" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
+    '<textarea id="f-ing-' + idx + '-func" placeholder="作用（它是干什么的？）" oninput="updateProgress()">' + escapeHtml(func) + '</textarea>' +
+    '<input type="text" id="f-ing-' + idx + '-source" placeholder="来源/依据（专利号、文献、产地等）" value="' + escapeHtml(source) + '" oninput="updateProgress()">' +
+    '</div></div>';
+  document.getElementById('ingredient-list').insertAdjacentHTML('beforeend', html);
+}
+
+// ── Dynamic: Personas ──
+window.personaCount = 0;
+function addPersona() {
+  window.personaCount = (window.personaCount || 0) + 1;
+  renderPersona(window.personaCount, '');
+  updateProgress();
+}
+function addPersonaSilent(val) {
+  window.personaCount = (window.personaCount || 0) + 1;
+  renderPersona(window.personaCount, val);
+}
+function renderPersona(idx, val) {
+  const html = '<div class="item-card persona-item" data-idx="' + idx + '">' +
+    '<div class="item-card-header">' +
+    '<span class="item-card-label" style="color:var(--blue-800)">📌 人群' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + (window.personaCount===1?' <span style="color:var(--red-500)">*</span>':'') + '</span>' +
+    (window.personaCount>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
+    '</div>' +
+    '<textarea class="tall" id="f-p-who-' + idx + '" placeholder="身份标签 + 从哪来 + 要什么 / 忍不了什么" oninput="updateProgress()">' + escapeHtml(val) + '</textarea>' +
+    '</div>';
+  document.getElementById('persona-list').insertAdjacentHTML('beforeend', html);
+}
+
+// ── Dynamic: Scenes ──
+window.sceneCount = 0;
+function addScene() {
+  window.sceneCount = (window.sceneCount || 0) + 1;
+  renderScene(window.sceneCount, '');
+  updateProgress();
+}
+function addSceneSilent(val) {
+  window.sceneCount = (window.sceneCount || 0) + 1;
+  renderScene(window.sceneCount, val);
+}
+function renderScene(idx, val) {
+  const html = '<div class="item-card scene-item" data-idx="' + idx + '">' +
+    '<div class="item-card-header">' +
+    '<span class="item-card-label" style="color:var(--blue-800)">📌 场景' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + (window.sceneCount===1?' <span style="color:var(--red-500)">*</span>':'') + '</span>' +
+    (window.sceneCount>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
+    '</div>' +
+    '<textarea class="tall" id="f-scene-' + idx + '" placeholder="谁，在什么情境下（发生了什么），用了产品之后怎么样" oninput="updateProgress()">' + escapeHtml(val) + '</textarea>' +
+    '</div>';
+  document.getElementById('scene-list').insertAdjacentHTML('beforeend', html);
+}
+
+// ── Dynamic: POPs ──
+window.popCount = 0;
+function addPOP() {
+  window.popCount = (window.popCount || 0) + 1;
+  renderPOP(window.popCount, '');
+  updateProgress();
+}
+function addPOPSilent(val) {
+  window.popCount = (window.popCount || 0) + 1;
+  renderPOP(window.popCount, val);
+}
+function renderPOP(idx, val) {
+  const html = '<div class="item-card pop-item" data-idx="' + idx + '">' +
+    '<div class="item-card-header">' +
+    '<span class="item-card-label" style="color:var(--green-800)">📌 POP' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
+    (window.popCount>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
+    '</div>' +
+    '<input type="text" id="f-v-pop-' + idx + '" placeholder="品类基本盘描述（做不到这条，品类都不算入局）" value="' + escapeHtml(val) + '" oninput="updateProgress()">' +
+    '</div>';
+  document.getElementById('pop-list').insertAdjacentHTML('beforeend', html);
+}
+
+// ── Dynamic: PODs ──
+window.podCount = 0;
+function addPOD() {
+  window.podCount = (window.podCount || 0) + 1;
+  renderPOD(window.podCount, '', '', '', '');
+  updateProgress();
+}
+function addPODSilent(name, desc, comp, rtb) {
+  window.podCount = (window.podCount || 0) + 1;
+  renderPOD(window.podCount, name, desc, comp, rtb);
+}
+function renderPOD(idx, name, desc, comp, rtb) {
+  const html = '<div class="item-card pod-item" data-idx="' + idx + '">' +
+    '<div class="item-card-header">' +
+    '<span class="item-card-label" style="color:var(--green-800)">POD-' + idx + ' + RTB' + (window.podCount===1?' <span style="color:var(--red-500)">*</span>':'') + '</span>' +
+    (window.podCount>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
+    '</div>' +
+    (window.podCount===1?'<div style="font-size:11px;color:var(--gray-400);margin-bottom:8px;">POD（差异点）— 消费者选你不选竞品的理由 &nbsp;|&nbsp; RTB（证据）— 凭什么站得住</div>':'') +
+    '<div class="item-card-fields">' +
+    '<input type="text" id="f-v-pod' + idx + '-name" placeholder="POD名称" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
+    '<textarea id="f-v-pod' + idx + '-desc" placeholder="用FAB结构一句话说清（含利益点）" oninput="updateProgress()">' + escapeHtml(desc) + '</textarea>' +
+    '<textarea id="f-v-pod' + idx + '-comp" placeholder="vs 竞品（市场现状对比）" oninput="updateProgress()">' + escapeHtml(comp) + '</textarea>' +
+    '<textarea id="f-v-pod' + idx + '-rtb" placeholder="RTB证据（可验证的事实/数据/原理）" oninput="updateProgress()">' + escapeHtml(rtb) + '</textarea>' +
+    '</div></div>';
+  document.getElementById('pod-list').insertAdjacentHTML('beforeend', html);
+}
+
+// ── Dynamic: Competitors ──
+window.compCount = 0;
+function addCompetitor() {
+  window.compCount = (window.compCount || 0) + 1;
+  renderCompetitor(window.compCount, '', '', '');
+  updateProgress();
+}
+function addCompetitorSilent(name, position, advantage) {
+  window.compCount = (window.compCount || 0) + 1;
+  renderCompetitor(window.compCount, name, position, advantage);
+}
+function renderCompetitor(idx, name, position, advantage) {
+  const html = '<div class="item-card competitor-item" data-idx="' + idx + '">' +
+    '<div class="item-card-header">' +
+    '<span class="item-card-label" style="color:var(--rose-800)">📌 竞品' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
+    (idx>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
+    '</div><div class="item-card-fields">' +
+    '<input type="text" id="f-comp-' + idx + '-name" placeholder="竞品名称" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
+    '<input type="text" id="f-comp-' + idx + '-position" placeholder="一句话定位" value="' + escapeHtml(position) + '" oninput="updateProgress()">' +
+    '<textarea id="f-comp-' + idx + '-advantage" placeholder="核心优势" oninput="updateProgress()">' + escapeHtml(advantage) + '</textarea>' +
+    '</div></div>';
+  document.getElementById('competitor-list').insertAdjacentHTML('beforeend', html);
+}
+
+// ── Dynamic: Q&A ──
+window.qaCount = 0;
+function addQA() {
+  window.qaCount = (window.qaCount || 0) + 1;
+  renderQA(window.qaCount, '', '');
+  updateProgress();
+}
+function addQASilent(q, a) {
+  window.qaCount = (window.qaCount || 0) + 1;
+  renderQA(window.qaCount, q, a);
+}
+function renderQA(idx, q, a) {
+  const html = '<div class="item-card qa-item" data-idx="' + idx + '">' +
+    '<div class="item-card-header">' +
+    '<span class="item-card-label" style="color:var(--purple-800)">📌 问答' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
+    (idx>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
+    '</div><div class="item-card-fields">' +
+    '<input type="text" id="f-qa-' + idx + '-q" placeholder="问题（消费者常问什么？）" value="' + escapeHtml(q) + '" oninput="updateProgress()">' +
+    '<textarea id="f-qa-' + idx + '-a" placeholder="标准回答" oninput="updateProgress()">' + escapeHtml(a) + '</textarea>' +
+    '</div></div>';
+  document.getElementById('qa-list').insertAdjacentHTML('beforeend', html);
+}
+
+function removeItem(btn) {
+  const item = btn.closest('.ingredient-item, .persona-item, .scene-item, .pop-item, .pod-item, .competitor-item, .qa-item');
+  if (item) { item.remove(); updateProgress(); }
+}
+
+// ── Modal helpers ──
+function closePreview() { document.getElementById('preview-modal').classList.remove('show'); }
+function copyPreview() {
+  navigator.clipboard.writeText(document.getElementById('preview-content').innerText).then(() => toast('📋 已复制到剪贴板'));
+}
+function clearAll() {
+  if (!confirm('确定要清空所有填写内容？此操作不可撤销。\n\n建议先导出 PDF 或 Markdown 备份。')) return;
+  clearDynamicItems();
+  // Reset the structure
+  window.ingCount = 0; window.personaCount = 0; window.sceneCount = 0;
+  window.popCount = 0; window.podCount = 0; window.compCount = 0; window.qaCount = 0;
+  localStorage.removeItem(STORAGE_KEY);
+  getFieldIds().forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  // Add one empty item of each required type as placeholder
+  addIngredient(); addPersona(); addScene(); addCompetitor(); addPOD();
+  updateProgress();
+  toast('🗑️ 已清空');
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  // Clear all storage and start fresh
+  try {
+    localStorage.removeItem('caishifuling_brief_v5');
+    localStorage.removeItem('caishifuling_brief_v6');
+  } catch(e) {}
+
+  // Create one empty placeholder for each required dynamic section
+  addIngredient();
+  addPersona();
+  addScene();
+  addCompetitor();
+  addPOD();
+
+  updateProgress();
+  toast('🔧 产品brief填写工具已就绪');
+});
+
+document.getElementById('preview-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePreview();
+});
+document.getElementById('md-import-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeMdImport();
+});
+document.getElementById('md-export-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeMdExport();
+});
+window.addEventListener('beforeunload', saveToLocal);
+</script>
+
+</body>
+</html>

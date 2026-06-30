@@ -9,7 +9,7 @@
 
 由于brief工具是纯前端HTML（数据存储在DOM中，无后端），填写方式为：
 
-### 方案A（推荐）：生成Markdown → 通过「导入Markdown」功能填入
+### ☑SHOULD 方案A（推荐）：生成Markdown → 通过「导入Markdown」功能填入
 
 1. AI在阶段1确认所有内容后，生成符合导入格式的Markdown
 2. 审核人在浏览器打开brief工具 → 点击「导入Markdown」→ 粘贴 → 确认导入
@@ -35,7 +35,7 @@
 ... (依此类推，按版块组织)
 ```
 
-### 方案B（备用）：直接编辑HTML DOM
+### ✔MAY 方案B（备用）：直接编辑HTML DOM
 
 如果方案A不可用，AI通过bash操作HTML文件修改 `value` 属性。但由于这是交互式网页（动态创建DOM元素），直接修改HTML源码的初始值不一定有效（初始模板可能无预设值）。
 

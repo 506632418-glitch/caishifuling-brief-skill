@@ -740,8 +740,13 @@
 <div class="modal-overlay" id="md-import-modal">
   <div class="modal">
     <h2>📥 导入 Markdown</h2>
-    <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">粘贴从本工具导出的 Markdown 内容，系统将自动解析并填充到对应字段。动态项目（技术、人群、场景等）会自动创建。</p>
-    <textarea class="md-area" id="md-import-text" placeholder="在此粘贴 Markdown 内容..."></textarea>
+    <p style="font-size:12px;color:var(--gray-400);margin-bottom:12px;">支持两种格式：① 本工具导出的 <code>### 字段</code> 格式 ② AI生成的 <code>- 字段: 值</code> 格式。也可直接上传 .md 文件。</p>
+    <textarea class="md-area" id="md-import-text" placeholder="在此粘贴 Markdown 内容，或点击下方按钮选择 .md 文件..."></textarea>
+    <div style="margin-top:8px;margin-bottom:12px;display:flex;gap:8px;align-items:center;">
+      <input type="file" id="md-file-input" accept=".md,.txt,.markdown" style="display:none" onchange="loadMdFile(event)">
+      <button class="btn btn-outline" onclick="document.getElementById('md-file-input').click()" style="font-size:12px;">📂 选择 .md 文件</button>
+      <span id="md-file-name" style="font-size:11px;color:var(--gray-400);"></span>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="doImportMarkdown()">📥 确认导入</button>
       <button class="btn btn-ghost" onclick="closeMdImport()">取消</button>
@@ -853,39 +858,43 @@ function saveToLocal() {
 }
 
 // Load: rebuild dynamic items first, then populate values
+// Returns: the number of non-empty fields restored, or -1 if no stored data exists
 function loadFromLocal() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
+    if (!raw) return -1;
     var data = JSON.parse(raw);
-    if (!data.fields) return false;
+    if (!data.fields) return -1;
 
     // Step 1: Clear and rebuild dynamic items
     var struct = data.struct || {};
     clearDynamicItems();
 
-    // Rebuild from stored counts
-    for (var i = 0; i < (struct.ingCount || 1); i++) addIngredientSilent('', '', '');
-    for (var i = 0; i < (struct.personaCount || 1); i++) addPersonaSilent('');
-    for (var i = 0; i < (struct.sceneCount || 1); i++) addSceneSilent('');
-    for (var i = 0; i < (struct.compCount || 1); i++) addCompetitorSilent('', '', '');
+    // Step 2: Rebuild from stored counts (at least 1 for required sections)
+    for (var i = 0; i < Math.max(struct.ingCount || 0, 1); i++) addIngredientSilent('', '', '');
+    for (var i = 0; i < Math.max(struct.personaCount || 0, 1); i++) addPersonaSilent('');
+    for (var i = 0; i < Math.max(struct.sceneCount || 0, 1); i++) addSceneSilent('');
+    for (var i = 0; i < Math.max(struct.compCount || 0, 1); i++) addCompetitorSilent('', '', '');
     for (var i = 0; i < (struct.popCount || 0); i++) addPOPSilent('');
-    for (var i = 0; i < (struct.podCount || 1); i++) addPODSilent('', '', '', '');
+    for (var i = 0; i < Math.max(struct.podCount || 0, 1); i++) addPODSilent('', '', '', '');
     for (var i = 0; i < (struct.qaCount || 0); i++) addQASilent('', '');
 
-    // Step 2: Populate field values
-    var hasData = false;
+    // Step 3: Populate field values and count non-empty ones
+    var filledCount = 0;
     getFieldIds().forEach(function(id) {
       if (data.fields[id] !== undefined) {
         var el = document.getElementById(id);
-        if (el && el.value !== data.fields[id]) {
-          el.value = data.fields[id];
-          hasData = true;
+        if (el) {
+          el.value = data.fields[id] || '';
+          if (el.value.trim()) filledCount++;
         }
       }
     });
-    return hasData;
-  } catch(e) { console.error('load error:', e); return false; }
+    return filledCount;
+  } catch(e) {
+    console.error('load error:', e);
+    return -1;
+  }
 }
 
 function toast(msg) {
@@ -1227,13 +1236,201 @@ function showImportMarkdown() {
 }
 function closeMdImport() { document.getElementById('md-import-modal').classList.remove('show'); }
 
+// ── File upload loader ──
+function loadMdFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('md-file-name').textContent = '📄 ' + file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('md-import-text').value = e.target.result;
+    toast('📂 文件已加载：' + file.name);
+  };
+  reader.onerror = function() {
+    toast('⚠️ 文件读取失败');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ── Simple Markdown parser: - key: value format (AI-generated) ──
+function parseSimpleMarkdown(md) {
+  const sectionPattern = /## (.+)\n([\s\S]*?)(?=\n## |$)/g;
+  let match;
+  let filledCount = 0;
+
+  while ((match = sectionPattern.exec(md)) !== null) {
+    const secTitle = match[1].trim();
+    const secContent = match[2].trim();
+    const lines = secContent.split('\n');
+
+    // Strategy layer
+    if (secTitle.includes('战略层')) {
+      lines.forEach(line => {
+        const m = line.match(/^[-*]\s*(.+?)[：:]\s*(.+?)(?:\s*\(来源[：:].*)?$/);
+        if (!m) return;
+        const key = m[1].trim(), val = m[2].trim();
+        if (key.includes('产品名称')) { setField('f-s-name', val); filledCount++; }
+        else if (key.includes('品类定义')) { setField('f-s-category', val); filledCount++; }
+        else if (key.includes('产品规格')) { setField('f-s-spec', val); filledCount++; }
+        else if (key.includes('战略角色')) {
+          if (val.includes('引流款')) setField('f-s-role-1', '引流款');
+          else if (val.includes('利润款')) setField('f-s-role-1', '利润款');
+          else if (val.includes('形象款')) setField('f-s-role-1', '形象款');
+          else if (val.includes('卡位款')) setField('f-s-role-1', '卡位款');
+          const reasonMatch = val.match(/[（(](.+?)[）)]/);
+          if (reasonMatch) setField('f-s-role-reason', reasonMatch[1]);
+        }
+        else if (key.includes('角色理由')) { setField('f-s-role-reason', val); filledCount++; }
+      });
+    }
+    // Mind layer
+    else if (secTitle.includes('心智层')) {
+      lines.forEach(line => {
+        const m = line.match(/^[-*]\s*(.+?)[：:]\s*(.+)/);
+        if (!m) return;
+        const key = m[1].trim(), val = m[2].trim();
+        if (key.includes('产品口号')) {
+          const parts = val.split(/创作方向[：:]/);
+          setField('f-m-slogan', parts[0].trim());
+          if (parts[1]) setField('f-m-slogan-type', parts[1].trim());
+          filledCount++;
+        }
+        else if (key.includes('口号方向') || key.includes('创作方向')) { setField('f-m-slogan-type', val); filledCount++; }
+        else if (key.includes('产品口播')) { setField('f-m-broadcast', val); filledCount++; }
+      });
+    }
+    // Product layer
+    else if (secTitle.includes('产品层') || secTitle.includes('产品本质')) {
+      let currentSub = null;
+      lines.forEach(line => {
+        const subMatch = line.match(/^###\s*(.+)/);
+        if (subMatch) { currentSub = subMatch[1].trim(); return; }
+
+        const m = line.match(/^[-*]\s*(.+?)[：:]\s*(.+)/);
+        if (!m) return;
+        const key = m[1].trim(), val = m[2].trim();
+
+        if (currentSub && (currentSub.includes('核心成分') || currentSub.includes('核心技术'))) {
+          const im = line.match(/^\d+\.\s*(.+)/);
+          if (im) {
+            const parts = im[1].split(' — ');
+            addIngredientSilent(parts[0]?.trim() || '', parts[1]?.trim() || '', parts[2]?.trim() || '');
+            filledCount++;
+          }
+        }
+        else if (key.includes('作用原理')) { setField('f-pd-mechanism', val); filledCount++; }
+        else if (key.includes('颜色')) { setField('f-pd-color', val); filledCount++; }
+        else if (key.includes('质地')) { setField('f-pd-texture', val); filledCount++; }
+        else if (key.includes('气味')) { setField('f-pd-smell', val); filledCount++; }
+        else if (key.includes('触感')) { setField('f-pd-touch', val); filledCount++; }
+        else if (key.includes('包装形式')) { setField('f-pd-pack-form', val); filledCount++; }
+        else if (key.includes('主色调') || key.includes('包装色调')) { setField('f-pd-pack-color', val); filledCount++; }
+        else if (key.includes('设计风格')) { setField('f-pd-pack-style', val); filledCount++; }
+        else if (key.includes('独立') || key.includes('收纳')) { setField('f-pd-pack-unbox', val); filledCount++; }
+        else if (key.includes('使用规范')) { setField('f-s-usage', val); filledCount++; }
+        else if (key.includes('注意事项')) { setField('f-s-notice', val); filledCount++; }
+        else if (key.includes('保质期')) { setField('f-s-shelf-life', val); filledCount++; }
+        else if (key.includes('储存') || key.includes('保存')) { setField('f-s-storage', val); filledCount++; }
+      });
+    }
+    // Market layer
+    else if (secTitle.includes('市场层') || secTitle.includes('市场环境')) {
+      lines.forEach(line => {
+        const im = line.match(/^\d+\.\s*(.+)/);
+        if (im) {
+          const text = im[1];
+          const parts = text.split(' — ');
+          addCompetitorSilent(parts[0]?.trim() || '', parts[1]?.trim() || '', parts[2]?.trim() || '');
+          filledCount++;
+        }
+      });
+    }
+    // People
+    else if (secTitle.includes('人群')) {
+      lines.forEach(line => {
+        const im = line.match(/^\d+\.\s*(.+)/);
+        if (im) { addPersonaSilent(im[1].trim()); filledCount++; }
+      });
+    }
+    // Scenes
+    else if (secTitle.includes('场景')) {
+      lines.forEach(line => {
+        const im = line.match(/^\d+\.\s*(.+)/);
+        if (im) { addSceneSilent(im[1].trim()); filledCount++; }
+      });
+    }
+    // Value
+    else if (secTitle.includes('核心价值')) {
+      let inPOP = false, inPOD = false;
+      let podName = '', podDesc = '', podComp = '', podRtb = '';
+      lines.forEach(line => {
+        const subMatch = line.match(/^###\s*(.+)/);
+        if (subMatch) {
+          const sub = subMatch[1].trim();
+          if (inPOD && podName) { addPODSilent(podName, podDesc, podComp, podRtb); filledCount++; }
+          inPOP = sub.includes('POP') || sub.includes('品类基本盘');
+          inPOD = sub.includes('POD');
+          if (inPOD) { podName = sub.replace(/POD[-—\d]*[：:]\s*/, '').trim(); podDesc = ''; podComp = ''; podRtb = ''; }
+          return;
+        }
+        const kv = line.match(/^[-*]\s*(.+?)[：:]\s*(.+)/);
+        if (!kv) return;
+        const key = kv[1].trim(), val = kv[2].trim();
+        if (inPOP) {
+          const im = line.match(/^\d+\.\s*(.+)/);
+          if (im) { addPOPSilent(im[1].trim()); filledCount++; }
+        }
+        else if (inPOD) {
+          if (key.includes('差异描述') || key.includes('FAB')) podDesc = val;
+          else if (key.includes('vs') || key.includes('竞品')) podComp = val;
+          else if (key.includes('RTB') || key.includes('证据')) podRtb = val;
+        }
+      });
+      if (inPOD && podName) { addPODSilent(podName, podDesc, podComp, podRtb); filledCount++; }
+    }
+    // Q&A
+    else if (secTitle.includes('常见问题') || secTitle.includes('Q&A')) {
+      let q = '', a = '';
+      lines.forEach(line => {
+        const qm = line.match(/^\d+\.\s*Q[：:]\s*(.+)/);
+        if (qm) {
+          if (q && a) { addQASilent(q, a); filledCount++; }
+          q = qm[1].trim(); a = '';
+          return;
+        }
+        const am = line.match(/^[-*]\s*A[：:]\s*(.+)/);
+        if (am) { a = am[1].trim(); }
+      });
+      if (q && a) { addQASilent(q, a); filledCount++; }
+    }
+  }
+  return filledCount;
+}
+
 function doImportMarkdown() {
   const text = document.getElementById('md-import-text').value.trim();
-  if (!text) { toast('⚠️ 请先粘贴 Markdown 内容'); return; }
+  if (!text) { toast('⚠️ 请先粘贴 Markdown 内容或选择 .md 文件'); return; }
 
   try {
     // Clear existing dynamic items
     clearDynamicItems();
+
+    // Try simple parser (- key: value format, AI-generated) first
+    const simpleCount = parseSimpleMarkdown(text);
+    if (simpleCount > 0) {
+      // Simple parser succeeded — add default dynamic items if none created
+      if (window.ingCount === 0) addIngredientSilent('', '', '');
+      if (window.personaCount === 0) addPersonaSilent('');
+      if (window.sceneCount === 0) addSceneSilent('');
+      if (window.compCount === 0) addCompetitorSilent('', '', '');
+      if (window.podCount === 0) addPODSilent('', '', '', '');
+      updateProgress();
+      closeMdImport();
+      toast('✅ AI格式 Markdown 导入成功，已填充 ' + simpleCount + ' 个字段');
+      return;
+    }
+
+    // Fallback: try original parser (### label format, exported from this tool)
     parseAndFillMarkdown(text);
     updateProgress();
     closeMdImport();
@@ -1628,21 +1825,25 @@ function clearAll() {
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
-  // Clear all storage and start fresh
-  try {
+  // One-time cleanup: wipe all old brief data from localStorage
+  if (!localStorage.getItem('caishifuling_cleanup_done')) {
     localStorage.removeItem('caishifuling_brief_v5');
     localStorage.removeItem('caishifuling_brief_v6');
-  } catch(e) {}
+    localStorage.setItem('caishifuling_cleanup_done', '1');
+  }
 
-  // Create one empty placeholder for each required dynamic section
-  addIngredient();
-  addPersona();
-  addScene();
-  addCompetitor();
-  addPOD();
-
+  var filled = loadFromLocal();
+  if (filled < 0) {
+    // No stored data at all — create empty placeholders
+    addIngredient();
+    addPersona();
+    addScene();
+    addCompetitor();
+    addPOD();
+  }
   updateProgress();
-  toast('🔧 产品brief填写工具已就绪');
+  if (filled > 0) toast('📝 已恢复上次填写内容（' + filled + ' 项）');
+  else toast('🔧 产品brief填写工具已就绪');
 });
 
 document.getElementById('preview-modal').addEventListener('click', function(e) {
@@ -1654,7 +1855,34 @@ document.getElementById('md-import-modal').addEventListener('click', function(e)
 document.getElementById('md-export-modal').addEventListener('click', function(e) {
   if (e.target === this) closeMdExport();
 });
-window.addEventListener('beforeunload', saveToLocal);
+// Before unload: auto-save + warn if data exists
+window.addEventListener('beforeunload', function(e) {
+  saveToLocal();
+
+  // Check if any field has been filled
+  var hasContent = false;
+  getFieldIds().forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.value.trim()) hasContent = true;
+  });
+
+  if (hasContent) {
+    e.preventDefault();
+    e.returnValue = '您填写的内容尚未导出，确定要离开吗？建议先导出 PDF 或 Markdown 备份。';
+    return e.returnValue;
+  }
+});
+
+// Block Ctrl+S / Cmd+S to prevent browser saving edited HTML over the template
+// Data is auto-saved to localStorage — use the export buttons instead
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveToLocal();
+    toast('💾 数据已自动保存至本地 | 请使用「下载PDF」或「导出Markdown」保存副本');
+    return false;
+  }
+});
 </script>
 
 </body>

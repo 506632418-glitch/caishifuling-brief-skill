@@ -3,78 +3,144 @@
 ## 核心原则
 
 - **原始模板永不修改**。Skill 目录下的 `蔡氏福宁_产品brief_填写工具.html` 是干净的模板源文件。
-- **每次填写前先复制**：`cp [Skill目录]/蔡氏福宁_产品brief_填写工具.html [工作区]/蔡氏福宁_产品brief_[产品名].html`
+- **阶段0复制模板**：`cp [Skill目录]/蔡氏福宁_产品brief_填写工具.html [工作区]/蔡氏福宁_产品brief_[产品名].html`
+- **阶段1逐版块写入**：每版块确认后，AI立即将字段值写入HTML副本。
 - **所有操作针对副本**，原始模板始终可供下次使用。
 
-## 操作方式
+## AI写入HTML的技术参考
 
-### ✅DO 方案A（唯一推荐）：生成Markdown → 导入HTML工具
+### 静态字段写入
 
-这是当前版本的**唯一推荐方式**（方案B已废弃）。
+AI使用 `perl` 命令直接修改HTML文件中的字段值。
 
-1. AI在阶段1确认所有内容后，生成符合导入格式的 Markdown 文件
-2. AI复制模板HTML到审核人指定的工作区
-3. 审核人在浏览器打开工作区中的HTML副本
-4. 点击「📥 导入Markdown」→ 点击「📂 选择 .md 文件」→ 选择 AI 生成的 .md 文件 → 确认导入
-5. 或：直接粘贴 Markdown 内容到文本框中导入
+```bash
+# input 字段：添加 value 属性
+# 适用字段：f-s-name, f-s-category, f-s-spec, f-s-role-1, f-s-role-2, f-s-role-reason,
+#          f-m-slogan, f-m-slogan-type, f-m-broadcast,
+#          f-pd-color, f-pd-texture, f-pd-smell, f-pd-touch, f-pd-sensory-other,
+#          f-pd-pack-form, f-pd-pack-color, f-pd-pack-style, f-pd-pack-unbox,
+#          f-s-shelf-life, f-s-storage,
+#          f-v-pop-{n}, f-v-pod{n}-name, f-v-pod{n}-desc, f-v-pod{n}-comp
+perl -i -pe 's/(<input[^>]*id="FIELD_ID"[^>]*)(>)/\1 value="填写内容"\2/' HTML_FILE
 
-优势：零HTML操作风险，审核人可在工具中预览和微调。
-
-### Markdown导入格式
-
-HTML工具支持两种Markdown格式自动识别：
-
-#### 格式1：AI生成格式（`- key: value`，推荐）
-
-```markdown
-# 蔡氏福宁 · 产品brief：[产品名称]
-
-> 填写日期：YYYY-MM-DD
-
-## 战略层
-- 产品名称: 蔡氏福宁·XXX
-- 品类定义: XXX
-- 产品规格: XXX
-- 战略角色: 引流款（理由说明）
-- 角色理由: XXX
-
-## 产品层
-- 作用原理: XXX
-- 颜色: XXX
-- 保质期: XXX
-
-### 核心成分/技术
-1. 成分名 — 作用 — 来源
-
-## 市场层
-1. 竞品名 — 定位 — 优势
-
-## 利益层·人群
-1. 人群描述
-...
+# textarea 字段：替换标签间内容
+# 适用字段：f-pd-mechanism, f-s-usage, f-s-notice,
+#           f-m-broadcast, f-pd-sensory-other,
+#           f-v-pod{n}-rtb, f-p-who-{n}, f-scene-{n}
+perl -i -0777 -pe 's{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{\1填写内容\3}gs' HTML_FILE
 ```
 
-#### 格式2：HTML工具导出格式（`### 字段`，兼容历史数据）
+### 完整字段ID对照
+
+见 `brief工具字段对照表.md`，列出所有38个字段的ID、所属版块、是否必填。
+
+### 动态列表HTML模板
+
+以下模板供AI在阶段1写入动态项时使用：
+
+```html
+<!-- 核心技术/成分 — 追加到 #ingredient-list 容器结束标签前 -->
+<div class="item-card ingredient-item" data-idx="N">
+  <div class="item-card-header">
+    <span class="item-card-label" style="color:var(--sky-800)">📌 技术N</span>
+    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
+  </div>
+  <div class="item-card-fields">
+    <input type="text" id="f-ing-N-name" placeholder="技术/成分名称" value="成分名">
+    <textarea id="f-ing-N-func" placeholder="作用">作用描述</textarea>
+    <input type="text" id="f-ing-N-source" placeholder="来源/依据" value="来源">
+  </div>
+</div>
+
+<!-- 竞品 — 追加到 #competitor-list 容器结束标签前 -->
+<div class="item-card competitor-item" data-idx="N">
+  <div class="item-card-header">
+    <span class="item-card-label" style="color:var(--rose-800)">📌 竞品N</span>
+    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
+  </div>
+  <div class="item-card-fields">
+    <input type="text" id="f-comp-N-name" placeholder="竞品名称" value="竞品名">
+    <input type="text" id="f-comp-N-position" placeholder="定位" value="定位">
+    <textarea id="f-comp-N-advantage" placeholder="优势">优势</textarea>
+  </div>
+</div>
+
+<!-- 人群 — 追加到 #persona-list 容器结束标签前 -->
+<div class="item-card persona-item" data-idx="N">
+  <div class="item-card-header">
+    <span class="item-card-label" style="color:var(--blue-800)">📌 人群N</span>
+    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
+  </div>
+  <textarea class="tall" id="f-p-who-N" placeholder="身份标签 + 从哪来 + 要什么 / 忍不了什么">人群描述</textarea>
+</div>
+
+<!-- 场景 — 追加到 #scene-list 容器结束标签前 -->
+<div class="item-card scene-item" data-idx="N">
+  <div class="item-card-header">
+    <span class="item-card-label" style="color:var(--blue-800)">📌 场景N</span>
+    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
+  </div>
+  <textarea class="tall" id="f-scene-N" placeholder="场景描述">场景描述</textarea>
+</div>
+
+<!-- POP — 追加到 #pop-list 容器结束标签前 -->
+<div class="item-card pop-item" data-idx="N">
+  <div class="item-card-header">
+    <span class="item-card-label" style="color:var(--green-800)">📌 POPN</span>
+    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
+  </div>
+  <input type="text" id="f-v-pop-N" placeholder="品类基本盘描述" value="POP内容">
+</div>
+
+<!-- POD — 追加到 #pod-list 容器结束标签前 -->
+<div class="item-card pod-item" data-idx="N">
+  <div class="item-card-header">
+    <span class="item-card-label" style="color:var(--green-800)">📌 POD-N</span>
+    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
+  </div>
+  <div class="item-card-fields">
+    <input type="text" id="f-v-podN-name" placeholder="差异点名称" value="POD名称">
+    <textarea id="f-v-podN-desc" placeholder="FAB差异描述">差异描述</textarea>
+    <input type="text" id="f-v-podN-comp" placeholder="vs竞品对比" value="竞品对比">
+    <textarea id="f-v-podN-rtb" placeholder="RTB证据">证据</textarea>
+  </div>
+</div>
+
+<!-- Q&A — 追加到 #qa-list 容器结束标签前 -->
+<div class="item-card qa-item" data-idx="N">
+  <div class="item-card-header">
+    <span class="item-card-label" style="color:var(--purple-800)">📌 Q&AN</span>
+    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
+  </div>
+  <div class="item-card-fields">
+    <textarea id="f-qa-N-q" placeholder="问题">问题</textarea>
+    <textarea id="f-qa-N-a" placeholder="回答">回答</textarea>
+  </div>
+</div>
+```
+
+> 动态项写入时使用perl追加到容器结束标签 `</div>` 之前。N按顺序递增。
+
+## Markdown导入（HTML工具内置功能，备用）
+
+HTML工具仍保留Markdown导入功能，支持两种格式：
+
+### 格式1：AI生成格式（`- key: value`）
+
+```markdown
+## 战略层
+- 产品名称: XXX
+- 品类定义: XXX
+```
+
+### 格式2：HTML工具导出格式（`### 字段`）
 
 从HTML工具自身「导出Markdown」功能生成的格式。
 
 ### 文件上传导入
 
-HTML工具 v1.0.2 起支持直接上传 .md 文件导入：
 1. 点击「📥 导入Markdown」
-2. 点击「📂 选择 .md 文件」
-3. 选择AI生成的 .md 文件
-4. 点击「📥 确认导入」
+2. 点击「📂 选择 .md 文件」或粘贴内容
+3. 确认导入
 
 > ⚠️ 注意：导入前会清空当前已填内容。已有数据请先导出备份。
-
-### Markdown导出格式解析
-
-brief工具中 `generateMarkdown()` 和 `exportMarkdown()` 函数定义了导出格式。导入也用相同格式解析。AI生成的Markdown必须严格遵循此格式。
-
-关键格式要素：
-- 用 `# 标题` 表示产品名称
-- 用 `## 版块名` 表示版块
-- 用 `- 字段名: 内容` 表示普通字段
-- 动态列表（成分/竞品/人群/场景/POP/POD/QA）使用编号格式
-- `### 子标题` 用于成分、POP、POD等子区域

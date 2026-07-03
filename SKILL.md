@@ -191,30 +191,38 @@ AI使用 `perl` 将确认的字段值写入HTML副本。写入规则：
 
 **写入命令模板**：
 
-> ⚠️ 字段内容中若含 `$` `@` `\` `&` `/` `"` 等 perl 特殊字符，必须先转义再代入命令。推荐方法：将内容写入临时文件，perl 读取文件内容填入，避免 shell 层面的二次转义。
+> ⚠️ 字段内容若含多行或特殊字符（`$` `@` `\` `&`），必须用临时文件方式。单行简短内容可用 `echo`，多行内容用 `cat << 'EOF'`。
 
 ```bash
-# input 字段（单行）—— 内容无特殊字符时直接用
-perl -i -pe 's/(<input[^>]*id="FIELD_ID"[^>]*)(>)/\1 value="填写内容"\2/' HTML_FILE
-
-# textarea / input 字段 —— 推荐方式：内容写入临时文件后读取，避免转义问题
+# === 写入临时文件（单行内容） ===
 echo '填写内容' > /tmp/brief_tmp.txt
+
+# === 写入临时文件（多行内容，如使用规范、口播话术） ===
+cat > /tmp/brief_tmp.txt << 'EOF'
+第一行内容
+第二行内容
+EOF
+
+# === textarea 字段 ===
+# 注意：使用 /e 修饰符避免内容中 $1 等字符被误解释为反向引用
 perl -i -0777 -pe '
-  open(F, "/tmp/brief_tmp.txt"); $v = do { local $/; <F> }; close(F); chomp $v;
-  s{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{\1$v\3}gs
+  open(F,"/tmp/brief_tmp.txt"); $v=do{local $/;<F>}; close(F); chomp $v;
+  s{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{$1 . $v . $3}ges
 ' HTML_FILE
 
-# input 字段 —— 同样用临时文件方式（内容含特殊字符时）
-perl -i -pe '
-  open(F, "/tmp/brief_tmp.txt"); $v = do { local $/; <F> }; close(F); chomp $v;
-  s/(<input[^>]*id="FIELD_ID"[^>]*)(>)/\1 value="$v"\2/
+# === input 字段 ===
+perl -i -0777 -pe '
+  open(F,"/tmp/brief_tmp.txt"); $v=do{local $/;<F>}; close(F); chomp $v;
+  s{(<input[^>]*id="FIELD_ID"[^>]*)(>)}{$1 . qq( value=") . $v . qq(") . $2}ges
 ' HTML_FILE
 
-# 动态列表 —— 追加到指定容器结束标签前（精确容器ID匹配）
-echo '动态HTML结构' > /tmp/brief_tmp.txt
+# === 动态列表（追加到指定容器结束标签前） ===
+cat > /tmp/brief_tmp.txt << 'EOF'
+动态HTML结构
+EOF
 perl -i -0777 -pe '
-  open(F, "/tmp/brief_tmp.txt"); $ins = do { local $/; <F> }; close(F);
-  s{(<div id="CONTAINER_ID">[\s\S]*?)(</div>)}{\1$ins\2}m
+  open(F,"/tmp/brief_tmp.txt"); $ins=do{local $/;<F>}; close(F);
+  s{(<div id="CONTAINER_ID">[\s\S]*?)(</div>)}{$1 . $ins . $2}ges
 ' HTML_FILE
 ```
 

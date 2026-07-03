@@ -191,18 +191,34 @@ AI使用 `perl` 将确认的字段值写入HTML副本。写入规则：
 
 **写入命令模板**：
 
+> ⚠️ 字段内容中若含 `$` `@` `\` `&` `/` `"` 等 perl 特殊字符，必须先转义再代入命令。推荐方法：将内容写入临时文件，perl 读取文件内容填入，避免 shell 层面的二次转义。
+
 ```bash
-# input 字段（单行）
+# input 字段（单行）—— 内容无特殊字符时直接用
 perl -i -pe 's/(<input[^>]*id="FIELD_ID"[^>]*)(>)/\1 value="填写内容"\2/' HTML_FILE
 
-# textarea 字段
-perl -i -0777 -pe 's{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{\1填写内容\3}gs' HTML_FILE
+# textarea / input 字段 —— 推荐方式：内容写入临时文件后读取，避免转义问题
+echo '填写内容' > /tmp/brief_tmp.txt
+perl -i -0777 -pe '
+  open(F, "/tmp/brief_tmp.txt"); $v = do { local $/; <F> }; close(F); chomp $v;
+  s{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{\1$v\3}gs
+' HTML_FILE
 
-# 动态列表（追加到容器末尾）
-perl -i -0777 -pe 's{(</div>\s*$)}{动态HTML结构$1}m' HTML_FILE
+# input 字段 —— 同样用临时文件方式（内容含特殊字符时）
+perl -i -pe '
+  open(F, "/tmp/brief_tmp.txt"); $v = do { local $/; <F> }; close(F); chomp $v;
+  s/(<input[^>]*id="FIELD_ID"[^>]*)(>)/\1 value="$v"\2/
+' HTML_FILE
+
+# 动态列表 —— 追加到指定容器结束标签前（精确容器ID匹配）
+echo '动态HTML结构' > /tmp/brief_tmp.txt
+perl -i -0777 -pe '
+  open(F, "/tmp/brief_tmp.txt"); $ins = do { local $/; <F> }; close(F);
+  s{(<div id="CONTAINER_ID">[\s\S]*?)(</div>)}{\1$ins\2}m
+' HTML_FILE
 ```
 
-> 完整字段ID对照见 `references/brief工具字段对照表.md`。动态列表的HTML结构模板见 `references/brief填写操作指南.md`。
+> 动态列表容器ID对照：成分=`ingredient-list` | 竞品=`competitor-list` | 人群=`persona-list` | 场景=`scene-list` | POP=`pop-list` | POD=`pod-list` | QA=`qa-list`
 
 写入完成后输出：
 

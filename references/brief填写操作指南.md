@@ -13,22 +13,39 @@
 
 AI使用 `perl` 命令直接修改HTML文件中的字段值。
 
+> ⚠️ **特殊字符处理**：字段内容若含 `$` `@` `\` `&` `/` `"` 等 perl 特殊字符，**不要直接拼入命令字符串**。推荐方式：先将内容写入临时文件 `/tmp/brief_tmp.txt`，perl 读取文件内容代入，避免转义问题。
+
 ```bash
-# input 字段：添加 value 属性
-# 适用字段：f-s-name, f-s-category, f-s-spec, f-s-role-1, f-s-role-2, f-s-role-reason,
-#          f-m-slogan, f-m-slogan-type, f-m-broadcast,
-#          f-pd-color, f-pd-texture, f-pd-smell, f-pd-touch, f-pd-sensory-other,
-#          f-pd-pack-form, f-pd-pack-color, f-pd-pack-style, f-pd-pack-unbox,
-#          f-s-shelf-life, f-s-storage,
-#          f-v-pop-{n}, f-v-pod{n}-name, f-v-pod{n}-desc, f-v-pod{n}-comp
+# === input 字段 ===
+# 简单内容（无特殊字符）：直接注入
 perl -i -pe 's/(<input[^>]*id="FIELD_ID"[^>]*)(>)/\1 value="填写内容"\2/' HTML_FILE
 
-# textarea 字段：替换标签间内容
-# 适用字段：f-pd-mechanism, f-s-usage, f-s-notice,
-#           f-m-broadcast, f-pd-sensory-other,
-#           f-v-pod{n}-rtb, f-p-who-{n}, f-scene-{n}
-perl -i -0777 -pe 's{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{\1填写内容\3}gs' HTML_FILE
+# 复杂内容（含特殊字符）：通过临时文件
+echo '填写内容' > /tmp/brief_tmp.txt
+perl -i -pe '
+  open(F, "/tmp/brief_tmp.txt"); $v = do { local $/; <F> }; close(F); chomp $v;
+  s/(<input[^>]*id="FIELD_ID"[^>]*)(>)/\1 value="$v"\2/
+' HTML_FILE
+
+# === textarea 字段 ===
+echo '填写内容' > /tmp/brief_tmp.txt
+perl -i -0777 -pe '
+  open(F, "/tmp/brief_tmp.txt"); $v = do { local $/; <F> }; close(F); chomp $v;
+  s{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{\1$v\3}gs
+' HTML_FILE
+
+# === 动态列表 ===
+# 容器ID对照：ingredient-list | competitor-list | persona-list | scene-list | pop-list | pod-list | qa-list
+echo 'HTML结构' > /tmp/brief_tmp.txt
+perl -i -0777 -pe '
+  open(F, "/tmp/brief_tmp.txt"); $ins = do { local $/; <F> }; close(F);
+  s{(<div id="CONTAINER_ID">[\s\S]*?)(</div>)}{\1$ins\2}m
+' HTML_FILE
 ```
+
+适用字段说明：
+- **input 字段**：f-s-name, f-s-category, f-s-spec, f-s-role-1, f-s-role-2, f-s-role-reason, f-m-slogan, f-m-slogan-type, f-m-broadcast, f-pd-color, f-pd-texture, f-pd-smell, f-pd-touch, f-pd-sensory-other, f-pd-pack-form, f-pd-pack-color, f-pd-pack-style, f-pd-pack-unbox, f-s-shelf-life, f-s-storage, f-v-pop-{n}, f-v-pod{n}-name, f-v-pod{n}-desc, f-v-pod{n}-comp
+- **textarea 字段**：f-pd-mechanism, f-s-usage, f-s-notice, f-m-broadcast, f-pd-sensory-other, f-v-pod{n}-rtb, f-p-who-{n}, f-scene-{n}
 
 ### 完整字段ID对照
 

@@ -229,6 +229,7 @@
     <div class="toolbar-logo">蔡氏福宁 <span>·</span> 产品brief</div>
   </div>
   <div class="toolbar-right">
+    <button class="btn btn-ghost" onclick="location.href=(location.href.split('?')[0])+'?_='+Date.now()" title="强制重新加载（带缓存穿透）">🔄 刷新数据</button>
     <button class="btn btn-ghost" onclick="showPreview()">📋 预览摘要</button>
     <button class="btn btn-outline" onclick="exportPDF()">📄 下载PDF</button>
     <button class="btn btn-outline" onclick="exportMarkdown()">📝 导出Markdown</button>
@@ -243,6 +244,7 @@
     <span id="progress-pct">0%</span>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div id="diag-banner" style="display:none;margin-top:6px;padding:4px 10px;border-radius:4px;font-size:12px;text-align:center;"></div>
 </div>
 
 <div class="main">
@@ -1825,16 +1827,85 @@ function clearAll() {
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
-  // One-time cleanup: wipe all old brief data from localStorage
-  if (!localStorage.getItem('caishifuling_cleanup_done')) {
-    localStorage.removeItem('caishifuling_brief_v5');
-    localStorage.removeItem('caishifuling_brief_v6');
-    localStorage.setItem('caishifuling_cleanup_done', '1');
+  // ── TWO-PATH data loading ──
+  // Path 1 (primary): window.__BRIEF_DATA — set by preload script as a
+  //   direct JS variable. Works even if localStorage is disabled (e.g.
+  //   WorkBuddy embedded webview, private browsing, sandboxed iframes).
+  // Path 2 (fallback): localStorage — for data persistence across sessions.
+  var dataSource = 'none';
+  if (window.__BRIEF_DATA && window.__BRIEF_DATA.fields) {
+    // Primary path: data was injected as a JS variable — write to localStorage
+    // for persistence, then let loadFromLocal handle the rest
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(window.__BRIEF_DATA));
+      dataSource = 'direct';
+    } catch(e) {
+      // localStorage write failed (e.g., quota exceeded, disabled) —
+      // but we can still use the direct data by setting it manually
+      dataSource = 'direct-no-storage';
+      console.warn('localStorage not available, using direct JS data only');
+    }
   }
 
-  var filled = loadFromLocal();
+  // One-time cleanup: wipe OLD brief data from localStorage.
+  if (!localStorage.getItem('caishifuling_cleanup_done')) {
+    try {
+      localStorage.removeItem('caishifuling_brief_v5');
+      localStorage.setItem('caishifuling_cleanup_done', '1');
+    } catch(e) {
+      // localStorage may be completely unavailable
+      localStorage.setItem = localStorage.setItem || function(){};
+      console.warn('localStorage unavailable, skipping cleanup');
+    }
+  }
+
+  // ── Diagnostic banner ──
+  var diag = document.getElementById('diag-banner');
+  var lsSupported = (typeof(Storage) !== 'undefined');
+  var hasDirectData = !!(window.__BRIEF_DATA && window.__BRIEF_DATA.fields);
+  var preloadCount = hasDirectData ? Object.keys(window.__BRIEF_DATA.fields).length : 0;
+
+  var filled = -1;
+
+  if (dataSource === 'direct-no-storage') {
+    // localStorage unavailable but we have direct data — populate manually
+    filled = loadFromDirectData(window.__BRIEF_DATA);
+  } else {
+    // Normal path: try localStorage (may have been set by preload or direct path)
+    filled = loadFromLocal();
+  }
+
+  // Show diagnostic
+  if (hasDirectData && filled > 0) {
+    diag.style.display = 'block';
+    diag.style.background = '#E1F5EE';
+    diag.style.color = '#085041';
+    diag.innerHTML = '✅ 已加载 ' + filled + ' 个字段（直接注入' + (dataSource === 'direct-no-storage' ? '，localStorage不可用' : '') + '）';
+    setTimeout(function(){ diag.style.display = 'none'; }, 5000);
+  } else if (!lsSupported) {
+    diag.style.display = 'block';
+    diag.style.background = '#FDEDED';
+    diag.style.color = '#E05555';
+    diag.innerHTML = '❌ 浏览器不支持 localStorage 且无预注入数据。请用标准浏览器打开此文件。';
+  } else if (filled < 0 && hasDirectData) {
+    diag.style.display = 'block';
+    diag.style.background = '#FDEDED';
+    diag.style.color = '#E05555';
+    diag.innerHTML = '❌ 数据存在但加载失败。请检查浏览器控制台 (F12) 错误信息。';
+  } else if (filled < 0) {
+    diag.style.display = 'block';
+    diag.style.background = '#F1EFE8';
+    diag.style.color = '#5F5E5A';
+    diag.innerHTML = '⚠️ 未检测到数据。如果刚刚执行了注入：刷新页面 (F5)，或确认打开的是工作区副本而非模板。';
+  } else {
+    diag.style.display = 'block';
+    diag.style.background = '#E1F5EE';
+    diag.style.color = '#085041';
+    diag.innerHTML = '✅ 已加载 ' + filled + ' 个字段（来自 localStorage）';
+    setTimeout(function(){ diag.style.display = 'none'; }, 5000);
+  }
+
   if (filled < 0) {
-    // No stored data at all — create empty placeholders
     addIngredient();
     addPersona();
     addScene();
@@ -1845,6 +1916,36 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filled > 0) toast('📝 已恢复上次填写内容（' + filled + ' 项）');
   else toast('🔧 产品brief填写工具已就绪');
 });
+
+// Fallback loader for direct JS data when localStorage is unavailable
+function loadFromDirectData(data) {
+  try {
+    if (!data || !data.fields) return -1;
+    var struct = data.struct || {};
+    clearDynamicItems();
+    for (var i = 0; i < Math.max(struct.ingCount || 0, 1); i++) addIngredientSilent('', '', '');
+    for (var i = 0; i < Math.max(struct.personaCount || 0, 1); i++) addPersonaSilent('');
+    for (var i = 0; i < Math.max(struct.sceneCount || 0, 1); i++) addSceneSilent('');
+    for (var i = 0; i < Math.max(struct.compCount || 0, 1); i++) addCompetitorSilent('', '', '');
+    for (var i = 0; i < (struct.popCount || 0); i++) addPOPSilent('');
+    for (var i = 0; i < Math.max(struct.podCount || 0, 1); i++) addPODSilent('', '', '', '');
+    for (var i = 0; i < (struct.qaCount || 0); i++) addQASilent('', '');
+    var filledCount = 0;
+    getFieldIds().forEach(function(id) {
+      if (data.fields[id] !== undefined) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.value = data.fields[id] || '';
+          if (el.value.trim()) filledCount++;
+        }
+      }
+    });
+    return filledCount;
+  } catch(e) {
+    console.error('direct load error:', e);
+    return -1;
+  }
+}
 
 document.getElementById('preview-modal').addEventListener('click', function(e) {
   if (e.target === this) closePreview();

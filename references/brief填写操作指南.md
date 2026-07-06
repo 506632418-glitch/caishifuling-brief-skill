@@ -4,144 +4,120 @@
 
 - **原始模板永不修改**。Skill 目录下的 `蔡氏福宁_产品brief_填写工具.html` 是干净的模板源文件。
 - **阶段0复制模板**：`cp [Skill目录]/蔡氏福宁_产品brief_填写工具.html [工作区]/蔡氏福宁_产品brief_[产品名].html`
-- **阶段1逐版块写入**：每版块确认后，AI立即将字段值写入HTML副本。
+- **阶段1逐版块注入**：每版块确认后，AI更新JSON数据并用 `brief_inject.py` 注入HTML。
 - **所有操作针对副本**，原始模板始终可供下次使用。
 
-## AI写入HTML的技术参考
+## 数据流向
 
-### 静态字段写入
+brief工具的数据源是 **localStorage**，不是 HTML DOM。数据写入必须走以下路径：
 
-AI使用 `perl` 命令直接修改HTML文件中的字段值。
+```
+AI填写 → /tmp/brief_data.json → brief_inject.py → HTML中的<script>预加载脚本
+                                                          ↓
+浏览器打开 → 脚本执行 → localStorage.setItem() → loadFromLocal() → 渲染字段
+```
 
-> ⚠️ **特殊字符与多行内容处理**：字段内容必须通过临时文件传入，**禁止直接拼入命令字符串**。单行用 `echo`，多行用 `cat << 'EOF'`。perl 替换使用 `/e` 修饰符，彻底杜绝内容中 `$1` 等字符被误解释为反向引用。
+## ⛔ 防沉默失败铁律
+
+`brief_inject.py` 输出格式为 `OK: N fields injected (ing:X persona:Y ...)`。
+
+AI **绝对不得**在没有看到 `OK:` 输出的情况下声称"写入成功"——必须以脚本的实际输出为准。
+
+## 写入三步流程（缺一不可）
+
+1. **更新JSON数据** — 用 Python 读取 `/tmp/brief_data.json`，添加/更新字段值，写回
+2. **注入HTML** — 运行 `brief_inject.py` 将 JSON 数据 base64 编码后注入 HTML
+3. **验证输出** — 检查脚本输出是否以 `OK:` 开头
+
+## JSON 数据格式
+
+`/tmp/brief_data.json` 的数据结构：
+
+```json
+{
+  "fields": {
+    "字段ID": "填写内容",
+    ...
+  },
+  "struct": {
+    "ingCount": 2,
+    "personaCount": 1,
+    "sceneCount": 3,
+    "popCount": 2,
+    "podCount": 2,
+    "compCount": 3,
+    "qaCount": 2
+  }
+}
+```
+
+**fields**：所有字段的 ID → 值映射。包括静态字段（如 `f-s-name`）和动态字段（如 `f-ing-1-name`）。
+
+**struct 计数规则**：记录各类动态列表的项数。浏览器加载时，`loadFromLocal()` 根据这些计数重建表单元素：
+- `ingCount` → 成分/技术项数
+- `compCount` → 竞品项数
+- `personaCount` → 目标人群项数
+- `sceneCount` → 使用场景项数
+- `popCount` → POP（品类基本盘）项数
+- `podCount` → POD（差异点）项数
+- `qaCount` → 常见问题项数
+
+> ⚠️ 若 struct 计数与实际字段数量不一致，浏览器会重建错误数量的表单元素，导致部分字段显示异常。
+
+## 完整字段ID对照
+
+见 `brief工具字段对照表.md`，列出所有字段的ID、所属版块、是否必填。
+
+### 字段类型说明
+
+| 类型 | ID示例 | 说明 |
+|------|--------|------|
+| 静态 input | `f-s-name`, `f-pd-color`, `f-s-shelf-life` | 单行文本框 |
+| 静态 textarea | `f-s-category`, `f-m-broadcast`, `f-s-usage` | 多行文本框 |
+| 静态 select | `f-s-role-1`, `f-s-role-2`, `f-m-slogan-type` | 下拉选择（值填选项文本） |
+| 动态成分 | `f-ing-{n}-name`, `f-ing-{n}-func`, `f-ing-{n}-source` | n 从 1 开始递增 |
+| 动态竞品 | `f-comp-{n}-name`, `f-comp-{n}-position`, `f-comp-{n}-advantage` | n 从 1 开始递增 |
+| 动态人群 | `f-p-who-{n}` | n 从 1 开始递增 |
+| 动态场景 | `f-scene-{n}` | n 从 1 开始递增 |
+| 动态POP | `f-v-pop-{n}` | n 从 1 开始递增 |
+| 动态POD | `f-v-pod{n}-name`, `f-v-pod{n}-desc`, `f-v-pod{n}-comp`, `f-v-pod{n}-rtb` | n 从 1 开始递增 |
+| 动态QA | `f-qa-{n}-q`, `f-qa-{n}-a` | n 从 1 开始递增 |
+
+## brief_inject.py 使用
 
 ```bash
-# === 临时文件：单行 ===
-echo '填写内容' > /tmp/brief_tmp.txt
-
-# === 临时文件：多行（使用规范、口播话术等） ===
-cat > /tmp/brief_tmp.txt << 'EOF'
-第一行内容
-第二行内容
-EOF
-
-# === textarea 字段（/e 修饰符安全写法） ===
-perl -i -0777 -pe '
-  open(F,"/tmp/brief_tmp.txt"); $v=do{local $/;<F>}; close(F); chomp $v;
-  s{(<textarea[^>]*id="FIELD_ID"[^>]*>)(.*?)(</textarea>)}{$1 . $v . $3}ges
-' HTML_FILE
-
-# === input 字段 ===
-perl -i -0777 -pe '
-  open(F,"/tmp/brief_tmp.txt"); $v=do{local $/;<F>}; close(F); chomp $v;
-  s{(<input[^>]*id="FIELD_ID"[^>]*)(>)}{$1 . qq( value=") . $v . qq(") . $2}ges
-' HTML_FILE
-
-# === 动态列表 ===
-# 容器ID对照：ingredient-list | competitor-list | persona-list | scene-list | pop-list | pod-list | qa-list
-cat > /tmp/brief_tmp.txt << 'EOF'
-HTML结构
-EOF
-perl -i -0777 -pe '
-  open(F,"/tmp/brief_tmp.txt"); $ins=do{local $/;<F>}; close(F);
-  s{(<div id="CONTAINER_ID">[\s\S]*?)(</div>)}{$1 . $ins . $2}ges
-' HTML_FILE
+python3 [Skill目录]/scripts/brief_inject.py [HTML文件] [JSON数据文件]
 ```
 
-适用字段说明：
-- **input 字段**：f-s-name, f-s-category, f-s-spec, f-s-role-1, f-s-role-2, f-s-role-reason, f-m-slogan, f-m-slogan-type, f-m-broadcast, f-pd-color, f-pd-texture, f-pd-smell, f-pd-touch, f-pd-sensory-other, f-pd-pack-form, f-pd-pack-color, f-pd-pack-style, f-pd-pack-unbox, f-s-shelf-life, f-s-storage, f-v-pop-{n}, f-v-pod{n}-name, f-v-pod{n}-desc, f-v-pod{n}-comp
-- **textarea 字段**：f-pd-mechanism, f-s-usage, f-s-notice, f-m-broadcast, f-pd-sensory-other, f-v-pod{n}-rtb, f-p-who-{n}, f-scene-{n}
+若省略 JSON 文件路径，默认读取 `/tmp/brief_data.json`。
 
-### 完整字段ID对照
-
-见 `brief工具字段对照表.md`，列出所有38个字段的ID、所属版块、是否必填。
-
-### 动态列表HTML模板
-
-以下模板供AI在阶段1写入动态项时使用：
-
-```html
-<!-- 核心技术/成分 — 追加到 #ingredient-list 容器结束标签前 -->
-<div class="item-card ingredient-item" data-idx="N">
-  <div class="item-card-header">
-    <span class="item-card-label" style="color:var(--sky-800)">📌 技术N</span>
-    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
-  </div>
-  <div class="item-card-fields">
-    <input type="text" id="f-ing-N-name" placeholder="技术/成分名称" value="成分名">
-    <textarea id="f-ing-N-func" placeholder="作用">作用描述</textarea>
-    <input type="text" id="f-ing-N-source" placeholder="来源/依据" value="来源">
-  </div>
-</div>
-
-<!-- 竞品 — 追加到 #competitor-list 容器结束标签前 -->
-<div class="item-card competitor-item" data-idx="N">
-  <div class="item-card-header">
-    <span class="item-card-label" style="color:var(--rose-800)">📌 竞品N</span>
-    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
-  </div>
-  <div class="item-card-fields">
-    <input type="text" id="f-comp-N-name" placeholder="竞品名称" value="竞品名">
-    <input type="text" id="f-comp-N-position" placeholder="定位" value="定位">
-    <textarea id="f-comp-N-advantage" placeholder="优势">优势</textarea>
-  </div>
-</div>
-
-<!-- 人群 — 追加到 #persona-list 容器结束标签前 -->
-<div class="item-card persona-item" data-idx="N">
-  <div class="item-card-header">
-    <span class="item-card-label" style="color:var(--blue-800)">📌 人群N</span>
-    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
-  </div>
-  <textarea class="tall" id="f-p-who-N" placeholder="身份标签 + 从哪来 + 要什么 / 忍不了什么">人群描述</textarea>
-</div>
-
-<!-- 场景 — 追加到 #scene-list 容器结束标签前 -->
-<div class="item-card scene-item" data-idx="N">
-  <div class="item-card-header">
-    <span class="item-card-label" style="color:var(--blue-800)">📌 场景N</span>
-    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
-  </div>
-  <textarea class="tall" id="f-scene-N" placeholder="场景描述">场景描述</textarea>
-</div>
-
-<!-- POP — 追加到 #pop-list 容器结束标签前 -->
-<div class="item-card pop-item" data-idx="N">
-  <div class="item-card-header">
-    <span class="item-card-label" style="color:var(--green-800)">📌 POPN</span>
-    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
-  </div>
-  <input type="text" id="f-v-pop-N" placeholder="品类基本盘描述" value="POP内容">
-</div>
-
-<!-- POD — 追加到 #pod-list 容器结束标签前 -->
-<div class="item-card pod-item" data-idx="N">
-  <div class="item-card-header">
-    <span class="item-card-label" style="color:var(--green-800)">📌 POD-N</span>
-    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
-  </div>
-  <div class="item-card-fields">
-    <input type="text" id="f-v-podN-name" placeholder="差异点名称" value="POD名称">
-    <textarea id="f-v-podN-desc" placeholder="FAB差异描述">差异描述</textarea>
-    <input type="text" id="f-v-podN-comp" placeholder="vs竞品对比" value="竞品对比">
-    <textarea id="f-v-podN-rtb" placeholder="RTB证据">证据</textarea>
-  </div>
-</div>
-
-<!-- Q&A — 追加到 #qa-list 容器结束标签前 -->
-<div class="item-card qa-item" data-idx="N">
-  <div class="item-card-header">
-    <span class="item-card-label" style="color:var(--purple-800)">📌 Q&AN</span>
-    <button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>
-  </div>
-  <div class="item-card-fields">
-    <textarea id="f-qa-N-q" placeholder="问题">问题</textarea>
-    <textarea id="f-qa-N-a" placeholder="回答">回答</textarea>
-  </div>
-</div>
+**成功输出示例**：
+```
+OK: 12 fields injected (ing:2 persona:1 scene:3 comp:3 pop:2 pod:2 qa:2)
 ```
 
-> 动态项写入时使用perl追加到容器结束标签 `</div>` 之前。N按顺序递增。
+**失败输出示例**：
+```
+ERROR: JSON data file not found: /tmp/brief_data.json
+ERROR: HTML file not found: /path/to/html
+ERROR: </body> tag not found in HTML
+```
+
+## 验证注入结果（每次注入后必须执行）
+
+```bash
+python3 -c "
+import json, base64, re
+with open('HTML_FILE') as f:
+    html = f.read()
+m = re.search(r'atob\\(\"([^\"]+)\"\\)', html)
+if m:
+    data = json.loads(base64.b64decode(m.group(1)))
+    print(f'OK: {sum(1 for v in data[\"fields\"].values() if v and str(v).strip())} fields loaded')
+else:
+    print('FAIL: preload script not found')
+"
+```
 
 ## Markdown导入（HTML工具内置功能，备用）
 

@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>蔡氏福宁 · 产品brief 填写工作台</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" onerror="console.warn('html2canvas CDN load failed')"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="console.warn('jsPDF CDN load failed')"></script>
 <style>
   :root {
     --purple-50: #EEEDFE; --purple-100: #DCD9FB; --purple-500: #534AB7; --purple-800: #3C3489;
@@ -1076,7 +1074,45 @@ function buildExportSections() {
 }
 
 // ── Export PDF ──
+// ── Lazy-load CDN scripts for PDF export (loaded on-demand, not on page load) ──
+var __pdfLibsLoaded = false;
+var __pdfLibsLoading = false;
+function loadPdfLibs(callback) {
+  if (__pdfLibsLoaded) { callback(); return; }
+  if (__pdfLibsLoading) {
+    // Already loading — poll until done
+    var check = setInterval(function() {
+      if (__pdfLibsLoaded) { clearInterval(check); callback(); }
+    }, 200);
+    return;
+  }
+  __pdfLibsLoading = true;
+  toast('⏳ 正在加载 PDF 组件…');
+  var remaining = 2;
+  function onLoad() {
+    remaining--;
+    if (remaining === 0) { __pdfLibsLoaded = true; __pdfLibsLoading = false; }
+    if (remaining <= 0) callback();
+  }
+  // Load html2canvas
+  var s1 = document.createElement('script');
+  s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  s1.onload = onLoad; s1.onerror = function(){ remaining--; };
+  document.head.appendChild(s1);
+  // Load jsPDF
+  var s2 = document.createElement('script');
+  s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  s2.onload = onLoad; s2.onerror = function(){ remaining--; };
+  document.head.appendChild(s2);
+}
+
 function exportPDF() {
+  loadPdfLibs(function() {
+    _doExportPDF();
+  });
+}
+
+function _doExportPDF() {
   const pname = getVal('f-s-name') || '未命名产品';
   toast('📄 正在生成 PDF...');
 

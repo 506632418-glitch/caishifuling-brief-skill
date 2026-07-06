@@ -13,12 +13,12 @@ description: >
 compatibility: workbuddy
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, Agent, Skill]
 dependencies: []
-version: "1.6.1"
+version: "1.6.2"
 ---
 
-# 蔡氏福宁产品brief填写 v1.6.1
+# 蔡氏福宁产品brief填写 v1.6.2
 
-> **版本**：v1.6.1 | **日期**：2026-07-06
+> **版本**：v1.6.2 | **日期**：2026-07-06
 
 ## 概述
 

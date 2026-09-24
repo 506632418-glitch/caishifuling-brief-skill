@@ -14,12 +14,12 @@ description: >
 compatibility: workbuddy
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, Agent, Skill]
 dependencies: [python3]
-version: "1.9.0"
+version: "1.9.1"
 ---
 
-# 蔡氏福宁产品brief填写 v1.9.0
+# 蔡氏福宁产品brief填写 v1.9.1
 
-> **版本**：v1.9.0 | **日期**：2026-09-23
+> **版本**：v1.9.1 | **日期**：2026-09-24
 
 ## 概述
 
@@ -41,7 +41,7 @@ version: "1.9.0"
 **CRITICAL — 本Skill有三条核心铁律，优先级高于一切：**
 
 ⛔DO NOT 1. **零幻觉，严禁脑补** — 每一条填入的内容必须有明确的信息来源。信息来源中不存在的内容，不得自行编造。不确定的标注「待确认」，由审核人决定。
-✅DO 2. **每版块确认后方可进入下一版块** — 一个版块的填写结果必须经审核人确认，AI不得自动跳版块。
+✅DO 2. **每版块确认后方可进入下一版块** — 一个版块的填写结果必须经审核人确认，AI不得自动跳版块。**每次回复只推进一个版块的一个步骤（A 或 B+C）**，禁止在确认前把两个及以上版块的字段写入 JSON——阶段1注入必须带 `--section N`，顺序违规由 `brief_inject.py` 机器拒绝（`GATE-FAIL`，判定权在脚本）。审核人显式要求跳过某版块时：记入 `progress.skipped` 留痕并告知后果（该版块将以缺口呈现至补齐为止），不得静默乱序。
 ⛔DO NOT 3. **合规是底线** — 所有文案不得暗示或明示医疗功效。蔡氏福宁产品属于日用品，不是药品/医疗器械。涉及功效描述的字段必须通过合规校验清单逐项自查。
 
 ---
@@ -411,6 +411,8 @@ version: "1.9.0"
 
 🧷 **上步校验锁**：阶段1执行前必须确认阶段0产出物（信息源覆盖范围清单 + HTML副本）已就绪且经审核人确认。若阶段0未完成，阶段1不得启动。
 
+🧷 **板块间校验锁（v1.9.1 防跳板块）**：每个版块步骤A开始前，先 `cat` 读取 `brief_data.json` 的 `progress`，以上账确定当前序号 N（上一版块必须已在 `confirmed` 或在 `skipped` 留痕）；**进度账是唯一权威，拿不准时以账为准，不凭对话记忆**——上下文被压缩后尤其如此。
+
 **填写规则**：
 
 | 规则 | 标注 | 说明 |
@@ -449,7 +451,7 @@ version: "1.9.0"
 【struct 计数】（本版块涉及的动态列表）
 - 成分: N 项 | 竞品: N 项 | 人群: N 项 | 场景: N 项 | POP: N 项 | POD: N 项 | QA: N 项
 
-请确认以上内容。确认后我将更新JSON数据并注入HTML。
+请确认以上内容。确认后我将记入进度账（progress.confirmed 追加 {N}）、更新JSON数据并以 --section {N} 注入HTML。
 ```
 
 #### 步骤B：审核人确认后 → 更新JSON数据 → 注入HTML
@@ -474,16 +476,23 @@ AI 将确认的字段值记录到 `[输出目录]/brief_data.json`，然后用 `
     "podCount": 2,
     "compCount": 3,
     "qaCount": 2
+  },
+  "progress": {
+    "current": 3,
+    "confirmed": [1, 2, 3],
+    "skipped": []
   }
 }
 ```
 
 > **struct 计数规则**：记录动态列表（成分/竞品/人群/场景/POP/POD/QA）各有多少项。浏览器加载时根据这些计数重建对应的表单元素。
 
-**写入三步操作**（每版块执行一次）：
+> **progress 进度账（v1.9.1 起必填，防跳板块的物化状态）**：`current` = 当前版块序号；`confirmed` = 审核人已确认的版块序号（**严格递增追加**，一次只加一个）；`skipped` = 审核人显式要求跳过的序号留痕。步骤A获确认后立即追加，步骤B注入必须带 `--section N`——`brief_inject.py` 按 G1连续性/G2当前确认 两条硬规则机器校验，违规输出 `ERROR: GATE-FAIL` 拒绝写入；重注入已确认板块且其后板块也已确认时输出 `WARN`（补正通道，须审核人已同意该 🟡级修改）并放行。**禁止通过手改 progress 绕过闸口**，闸口判定权在脚本。
+
+**写入三步操作**（每版块执行一次，{N}=当前版块序号）：
 
 ```bash
-# 第1步：更新 JSON 数据文件（追加/更新当前版块的字段值）
+# 第1步：更新 JSON 数据文件（追加/更新当前版块的字段值 + 记进度账）
 python3 -c "
 import json
 path = '[输出目录]/brief_data.json'
@@ -493,12 +502,17 @@ with open(path) as f:
 data['fields']['f-s-name'] = '蔡氏福宁·泡脚包'
 data['fields']['f-s-category'] = '中药泡脚'
 data['struct']['ingCount'] = 2
+# 记进度账：审核人已确认本版块（步骤A完成）才允许追加
+data.setdefault('progress', {'current': 0, 'confirmed': [], 'skipped': []})
+data['progress']['current'] = {N}
+if {N} not in data['progress']['confirmed']:
+    data['progress']['confirmed'].append({N})
 with open(path, 'w') as f:
     json.dump(data, f, ensure_ascii=False)
 "
 
-# 第2步：注入 HTML（将JSON数据写入HTML预加载脚本，双通道）
-python3 [Skill目录]/scripts/brief_inject.py "[输出目录]/蔡氏福宁_产品brief_[产品名].html" "[输出目录]/brief_data.json"
+# 第2步：注入 HTML（--section 闸口机器校验顺序：违规即 ERROR: GATE-FAIL 且拒绝写入）
+python3 [Skill目录]/scripts/brief_inject.py "[输出目录]/蔡氏福宁_产品brief_[产品名].html" "[输出目录]/brief_data.json" --section {N}
 
 # 第3步：验证注入结果（读通道1主数据）
 python3 -c "
@@ -558,6 +572,7 @@ python3 [Skill目录]/scripts/check_brief_compliance.py "[输出目录]/蔡氏�
 🔌 **熔断器**：
 - JSON数据更新：成功=继续 | 失败=检查JSON格式 | 重试=2次 | 降级=手动编辑JSON文件
 - brief_inject.py 注入：成功=输出 `OK: N fields` → 继续 | 失败=输出 `ERROR:` 或异常 → 检查文件路径和权限 | 重试=2次 | 降级=记录该版块未注入的字段，在阶段2统一修复
+- 板块闸口：输出 `ERROR: GATE-FAIL`（顺序违规：跳板块/未确认就注入）→ ⛔**回到步骤A补审核人确认，禁止手改 progress 绕闸**；输出 `ERROR: GATE-NO-PROGRESS` → 按步骤B第1步补记进度账后重跑；输出 `WARN: …修改重注入` → 补正通道正常放行，但须确认该修改已过审核人同意（🟡级操作）
 - check_brief_compliance.py 合规校验：成功=输出 `PASS:` → 继续 | 失败=`FAIL:` 禁用词/占位符命中 → 改写对应字段重注入重跑（重试2次） | 降级=保留FAIL清单，提请审核人人工裁决，不得静默放行
 - Python验证注入：Python脚本输出 `OK:` → 写入成功，告知用户 | 输出 `FAIL:` → 写入失败，检查注入脚本后重试 | 重试=2次 | 降级=标注该字段写入失败，请审核人手动填写
 

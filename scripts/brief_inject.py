@@ -3,15 +3,18 @@
 brief_inject.py — 将 brief 数据注入 HTML 文件的 localStorage 预加载脚本
 
 用法:
-  python3 brief_inject.py <html_file> [json_data_file]
+  python3 brief_inject.py <html_file> [json_data_file] [--section N]
 
 如果省略 json_data_file，默认读取 /tmp/brief_data.json
 
-工作原理:
-  1. 读取 JSON 数据文件
-  2. Base64 编码（消除所有转义问题）
-  3. 移除 HTML 中已有的旧 preload 脚本
-  4. 在 </body> 前注入新脚本，页面加载时自动预填 localStorage
+板块闸口（v1.9.1 起，防跳板块）:
+  阶段1逐板块注入必须带 --section N（N=1..8），此时 JSON 必须含 progress 状态，
+  脚本按三条规则硬校验，任一不满足输出 ERROR: GATE-FAIL* 并非零退码、拒绝写入：
+    G1 连续性：1..N-1 全部在 progress.confirmed（progress.skipped 中的豁免）
+    G2 当前确认：N 本身必须在 progress.confirmed（审核人没确认的板块不许注入）
+    G3 超前确认：N 已确认且其后板块也已确认时输出 WARN（视为补正重注入，须审核人已同意）；
+       未确认板块的超前确认由 G2 硬拦
+  不带 --section = 旧版全量注入模式（阶段0初始化/历史数据兼容），不触发闸口。
 
 JSON 数据结构示例:
 {
@@ -29,6 +32,11 @@ JSON 数据结构示例:
     "podCount": 2,
     "compCount": 3,
     "qaCount": 2
+  },
+  "progress": {
+    "current": 3,
+    "confirmed": [1, 2, 3],
+    "skipped": []
   }
 }
 """
@@ -42,9 +50,56 @@ import os
 STORAGE_KEY = "caishifuling_brief_v6"
 
 
+def check_section_gate(data, section, json_path):
+    """板块闸口：G1连续性 / G2当前确认 / G3禁预确认。不满足即退出。"""
+    progress = data.get("progress")
+    if not isinstance(progress, dict):
+        print(f"ERROR: GATE-NO-PROGRESS 注入板块{section}需要 {json_path} 内含 progress 字段"
+              f"（current/confirmed/skipped），请先按 SKILL.md 步骤B 更新进度再注入")
+        sys.exit(1)
+    confirmed = sorted(set(progress.get("confirmed", [])))
+    skipped = set(progress.get("skipped", []))
+    missing_before = [n for n in range(1, section) if n not in confirmed and n not in skipped]
+    if missing_before:
+        print(f"ERROR: GATE-FAIL 板块{section}注入被拒：前序板块 {missing_before} 未确认"
+              f"（confirmed={confirmed} skipped={sorted(skipped)}），不许跳板块")
+        sys.exit(1)
+    if section not in confirmed:
+        print(f"ERROR: GATE-FAIL 板块{section}尚未确认，不许注入——先完成步骤A审核人确认，"
+              f"将其计入 progress.confirmed")
+        sys.exit(1)
+    future = [n for n in confirmed if n > section]
+    if future:
+        # 补正通道：N 已在 confirmed（G2 已验）且其后板块已确认 → 视为「修改已确认版块」重注入。
+        # 该操作是 SKILL 可逆性分级 🟡（执行前须审核人同意），此处 WARN 留痕不拦截；
+        # 若 N 未确认而 future 已确认，属超前确认造假，已被上面 G2 硬拦。
+        print(f"WARN: 板块{section}为已确认板块的修改重注入（其后已确认板块 {future}）——"
+              f"请确认本次修改已获审核人同意（🟡级操作）")
+
+
 def main():
-    html_path = sys.argv[1]
-    json_path = sys.argv[2] if len(sys.argv) > 2 else "/tmp/brief_data.json"
+    args = sys.argv[1:]
+    section = None
+    if "--section" in args:
+        i = args.index("--section")
+        if i + 1 >= len(args):
+            print("ERROR: --section 需要一个数字参数（1..8）")
+            sys.exit(1)
+        try:
+            section = int(args[i + 1])
+        except ValueError:
+            print(f"ERROR: --section 参数非数字: {args[i + 1]}")
+            sys.exit(1)
+        if not 1 <= section <= 8:
+            print(f"ERROR: --section 超出板块范围 1..8: {section}")
+            sys.exit(1)
+        args = args[:i] + args[i + 2:]
+
+    html_path = args[0] if len(args) > 0 else None
+    json_path = args[1] if len(args) > 1 else "/tmp/brief_data.json"
+    if html_path is None:
+        print("用法: python3 brief_inject.py <html_file> [json_data_file] [--section N]")
+        sys.exit(1)
 
     if not os.path.exists(json_path):
         print(f"ERROR: JSON data file not found: {json_path}")
@@ -60,6 +115,10 @@ def main():
 
     if "fields" not in data:
         data = {"fields": data, "struct": {}}
+
+    # === 板块闸口（v1.9.1 防跳板块，判定权在脚本） ===
+    if section is not None:
+        check_section_gate(data, section, json_path)
 
     # Count non-empty fields for verification
     filled_count = sum(1 for v in data.get("fields", {}).values() if v and str(v).strip())

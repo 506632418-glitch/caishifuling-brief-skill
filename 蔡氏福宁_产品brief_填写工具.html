@@ -288,7 +288,7 @@
       <!-- 修改1：去掉价格，只保留规格 -->
       <div class="field-group">
         <div class="field-header">
-          <span class="field-label">产品规格</span>
+          <span class="field-label">产品规格 <span class="required">*</span></span>
           <div class="field-hint">
             <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-spec')">📐 填写标准</button>
             <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-spec')">💡 查看范例</button>
@@ -307,7 +307,7 @@
             <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-role')">💡 查看范例</button>
           </div>
         </div>
-        <div class="standard-text" id="std-s-role">选一（可主次两个）：<strong>引流款</strong>（拉新拓客）/ <strong>利润款</strong>（贡献毛利）/ <strong>形象款</strong>（立品牌高度）/ <strong>卡位款</strong>（占品类入口）。需写清选择理由</div>
+        <div class="standard-text" id="std-s-role">四选一（可主次两个），须对照判据：<strong>引流款</strong>（低决策门槛+任务是拉新，❌高价礼盒标引流）/ <strong>利润款</strong>（毛利率高于同类均值+有溢价支撑，❌最低价款标利润）/ <strong>形象款</strong>（立品牌天花板，销量低属正常，❌走量款标形象）/ <strong>卡位款</strong>（防御性占入口，成败看没让竞品站进来，❌淘汰遗留款标卡位）。理由须引用判据条目，禁"综合考量"类空话。完整判据表见 references/brief工具字段对照表.md</div>
         <div class="example-text" id="ex-s-role"><span class="ex-title">休足贴范例</span><strong>引流款</strong>（品类认知度高、决策门槛低，适合首次接触蔡氏福宁）+ <strong>利润款</strong>（高频消耗品，复购驱动）</div>
         <select id="f-s-role-1" onchange="updateProgress()">
           <option value="">-- 请选择主角色 --</option>
@@ -354,7 +354,8 @@
           ① <strong>场景+解决方案</strong> — "什么时候难受，我能解决它"<br>
           ② <strong>因为+所以</strong> — "因为[产品事实]，所以[消费者利益]"<br>
           ③ <strong>核心卖点直给</strong> — "[产品名]，[核心卖点]"<br>
-          ④ <strong>数字反差</strong> — "[数字A] vs [数字B]，[结果]"
+          ④ <strong>数字反差</strong> — "[数字A] vs [数字B]，[结果]"<br>
+          <strong>创作方向必填</strong>：先确认口号实际走的哪个方向再选，禁止写完口号后反向硬套；四方向判据+正反例见 references/brief工具字段对照表.md「四大创作方向判据表」
         </div>
         <div class="example-text" id="ex-m-slogan">
           <span class="ex-title">休足贴范例</span>
@@ -365,7 +366,7 @@
         </div>
         <textarea class="tall" id="f-m-slogan" placeholder="产品口号（主推）+ 可选备选方案" oninput="updateProgress()"></textarea>
         <select id="f-m-slogan-type" style="margin-top:8px" onchange="updateProgress()">
-          <option value="">-- 选择创作方向 --</option>
+          <option value="">-- 选择创作方向（必填）--</option>
           <option value="场景+解决方案">场景+解决方案</option>
           <option value="因为+所以">因为+所以</option>
           <option value="核心卖点直给">核心卖点直给</option>
@@ -383,7 +384,7 @@
           </div>
         </div>
         <div class="standard-text" id="std-m-broadcast">
-          <strong>从销售角度组织话术</strong>，用于对消费者进行产品阐述。站在柜台/直播间/货架前，你只有30秒说服一个人。<br>
+          <strong>从销售角度组织话术</strong>，用于对消费者进行产品阐述。站在柜台/直播间/货架前，你有<strong>约1分钟</strong>说服一个人——文字控制在 <strong>200-300字</strong>，超过300字必须精简。<br>
           结构建议：<strong>痛点引入 → 产品卖点 → 核心利益 → 行动号召</strong><br>
           ① 先戳痛点（"你是不是也这样…"）<br>
           ② 亮出卖点（"我们这个不一样，因为…"）<br>
@@ -397,7 +398,7 @@
           贴上去不到5分钟就有清凉感，第二天照样逛街、带娃、上班，腿不酸不沉。<br>
           一盒8片才一杯奶茶钱，今晚就试试，明天走路都轻快。」
         </div>
-        <textarea class="tall" id="f-m-broadcast" placeholder="30秒销售话术：痛点 → 卖点 → 利益 → 行动" oninput="updateProgress()"></textarea>
+        <textarea class="tall" id="f-m-broadcast" placeholder="约1分钟销售话术（200-300字）：痛点 → 卖点 → 利益 → 行动" oninput="updateProgress()"></textarea>
       </div>
 
     </div>
@@ -409,7 +410,7 @@
       <div class="section-title-wrap">
         <div class="section-dot dot-product"></div>
         <span class="section-title">产品层</span>
-        <span class="section-subtitle">产品本质 · 原理、技术与使用</span>
+        <span class="section-subtitle">产品本质 · 原理、机理与使用</span>
       </div>
       <span class="section-toggle">▾</span>
     </div>
@@ -425,30 +426,30 @@
           </div>
         </div>
         <div class="standard-text" id="std-pd-mechanism">
-          陈述<strong>产品通过何种方式对人体产生作用</strong>。<br>
-          不是「有什么功效」，而是「为什么有效」——从机制层面说清产品的工作方式。<br>
-          公式：[活性成分/技术] → [作用路径] → [产生的变化]
+          两段式写清（2026-09-23 审核人确认口径）：<br>
+          ① <strong>痛点成因</strong>——消费者为什么会有这个痛点（身体/生活方式层面的成因）<br>
+          ② <strong>痛点表现形式</strong>——痛点具体是什么感受、什么表现，具象到可感知、可想象
         </div>
         <div class="example-text" id="ex-pd-mechanism">
           <span class="ex-title">休足贴范例</span>
-          休足贴通过贴敷在腿足皮肤表面，利用温泉弱碱矿物与皮肤接触后产生渗透压差，帮助中和运动后堆积的乳酸，同时艾草、薄荷等本草成分经皮渗透，温经通络、产生清凉感，从而缓解腿足酸胀疲劳。
+          ① 痛点成因：长时间站立/行走（通勤+逛街、暴走旅行）让腿足肌肉持续紧张、疲劳物逐步堆积，酸胀感慢慢攒起来；② 痛点表现形式：腿又酸又胀、上楼梯发软，小腿发沉发紧，晚上躺下总想揉一揉、抬高一会儿才舒服，第二天照样疲惫。
         </div>
-        <textarea class="tall" id="f-pd-mechanism" placeholder="产品通过何种方式对人体产生作用：从机制层面说清产品的工作方式" oninput="updateProgress()"></textarea>
+        <textarea class="tall" id="f-pd-mechanism" placeholder="两段式：①消费者为什么会有这个痛点（痛点成因） ②痛点的具体表现形式" oninput="updateProgress()"></textarea>
       </div>
 
-      <!-- 核心技术：动态添加 -->
+      <!-- 核心机理（原"核心技术"，2026-09-23更名；字段ID f-ing-{n}-* 不变）：动态添加 -->
       <div class="field-group">
         <div class="field-header">
-          <span class="field-label">核心技术 <span class="required">*</span></span>
+          <span class="field-label">核心机理 <span class="required">*</span></span>
           <div class="field-hint">
             <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-pd-ingredient')">📐 填写标准</button>
             <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-pd-ingredient')">💡 查看范例</button>
           </div>
         </div>
-        <div class="standard-text" id="std-pd-ingredient">每项技术写清三个维度：技术/成分名 — 作用（干什么）— 来源/依据（专利号、文献、产地等）</div>
-        <div class="example-text" id="ex-pd-ingredient"><span class="ex-title">休足贴范例</span>① 温泉弱碱矿物 — 中和乳酸，缓解酸胀 — 日本别府温泉提取技术<br>② 艾草提取物 — 温经通络 — 《本草纲目》记载<br>③ 薄荷醇 — 即时清凉 — 天然薄荷提取</div>
+        <div class="standard-text" id="std-pd-ingredient">每项机理写清三个维度：机理名称（具体的机理名称）— 痛点成因（具体简述机理如何改善痛点）— 机理来源（成因的来源依据：专利号、文献、产地等）</div>
+        <div class="example-text" id="ex-pd-ingredient"><span class="ex-title">休足贴范例</span>① 温泉弱碱矿物渗透压差 — 加速运动后堆积疲劳物的分散中和，改善酸胀 — 日本别府温泉提取技术<br>② 艾草经皮渗透温经通络 — 缓解小腿发沉、僵紧的循环不畅感 — 《本草纲目》记载<br>③ 薄荷醇即时清凉 — 压制闷热胀感，带来即刻舒缓 — 天然薄荷提取</div>
         <div id="ingredient-list"></div>
-        <button type="button" class="btn btn-outline" onclick="addIngredient()" style="margin-top:10px;width:100%;justify-content:center;">＋ 添加核心技术</button>
+        <button type="button" class="btn btn-outline" onclick="addIngredient()" style="margin-top:10px;width:100%;justify-content:center;">＋ 添加核心机理</button>
       </div>
 
       <!-- 感官描述：多字段 -->
@@ -495,7 +496,7 @@
       <!-- 使用规范 -->
       <div class="field-group">
         <div class="field-header">
-          <span class="field-label">使用规范</span>
+          <span class="field-label">使用规范 <span class="required">*</span></span>
           <div class="field-hint">
             <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-usage')">📐 填写标准</button>
             <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-usage')">💡 查看范例</button>
@@ -509,7 +510,7 @@
       <!-- 注意事项 -->
       <div class="field-group">
         <div class="field-header">
-          <span class="field-label">注意事项</span>
+          <span class="field-label">注意事项 <span class="required">*</span></span>
           <div class="field-hint">
             <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-notice')">📐 填写标准</button>
             <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-s-notice')">💡 查看范例</button>
@@ -523,7 +524,7 @@
       <!-- 保存条件 -->
       <div class="field-group">
         <div class="field-header">
-          <span class="field-label">保存条件</span>
+          <span class="field-label">保质期与保存条件 <span class="required">*</span></span>
           <div class="field-hint">
             <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-s-storage')">📐 填写标准</button>
           </div>
@@ -556,7 +557,7 @@
             <button class="hint-badge hint-standard" onclick="event.stopPropagation();toggleHint(this,'std-mk-direct')">📐 填写标准</button>
           </div>
         </div>
-        <div class="standard-text" id="std-mk-direct">同品类、同价格带、同渠道的品牌/产品。每项注明竞品名 + 一句话定位 + 核心优势。</div>
+        <div class="standard-text" id="std-mk-direct">同品类、同价格带、同渠道的品牌/产品（<strong>市面替代方案不算竞品</strong>，替代方案进 POD 的 vs竞品 栏）。每项 = 竞品名 + 一句话定位 + 核心优势。<br><strong>至少填 2 条，且其中 2 条三字段填全</strong>；「核心优势」写客观事实（如"温度偏高""无独立包装"），禁贬低词——供 POD 中性对比引用。</div>
         <div id="competitor-list"></div>
         <button type="button" class="btn btn-outline" onclick="addCompetitor()" style="margin-top:10px;width:100%;justify-content:center;">＋ 添加竞品</button>
       </div>
@@ -612,7 +613,9 @@
         </div>
         <div class="standard-text" id="std-p-who">
           <strong>不要写"都市白领"、"注重健康的女性"——太泛了。</strong><br>
-          每类人群写清楚：① <strong>具体身份标签</strong>（他们是谁？干什么的？）② <strong>从哪里来</strong>（以前用什么替代方案？）③ <strong>核心诉求</strong>（想要什么？不愿忍受什么？）
+          每类人群写清楚：① <strong>具体身份标签</strong>（他们是谁？干什么的？）② <strong>从哪里来</strong>（以前用什么替代方案？）③ <strong>核心诉求</strong>（想要什么？不愿忍受什么？）<br>
+          <strong>至少填 2 类</strong>；三要素用<strong>场景化叙事文案</strong>写（口语化、有画面、身体感受），不是结构化清单。<br>
+          ⛔ <strong>差异化铁律</strong>：每类人群的场景、替代方案、诉求措辞各自个性化，<strong>禁止共用一套句式或同一组痛点词</strong>。
         </div>
         <div class="example-text" id="ex-p-who"><span class="ex-title">休足贴范例</span><strong>核心人群：</strong>长时间站立/走动的职业人群（导购、护士、旅行爱好者、健身族）。「没有时间专门养生」，以前最多泡个脚、躺一躺，追求「贴上去就能感受到变化」的效率型产品。</div>
 
@@ -628,7 +631,7 @@
     <div class="section-header" onclick="toggleSection('sec-scene')">
       <div class="section-title-wrap">
         <div class="section-dot dot-scene"></div>
-        <span class="section-title">利益层 · 场景</span>
+        <span class="section-title">利益层 · 场景 <span class="required">*</span></span>
         <span class="section-subtitle">目标人群 × 使用场景 × 产品角色</span>
       </div>
       <span class="section-toggle">▾</span>
@@ -637,7 +640,10 @@
 
       <div class="standard-text show" style="margin-bottom:16px">
         <strong>回答一个问题：谁，在什么场景下，需要我的产品？</strong><br>
-        专注于画面感——让读到的人能<strong>看到那个瞬间</strong>。
+        专注于画面感——让读到的人能<strong>看到那个瞬间</strong>。<br>
+        <strong>至少填 2 个</strong>；「谁」须<strong>身份可识别</strong>（写明职业/身份，能对回人群条目）。<br>
+        写作引导（非格式要求）：场景画面 → 身体感受 → 使用产品 → 感受变化。<br>
+        ⛔ 每个场景<strong>独立画面</strong>，禁止复制人群句式换个主语。
       </div>
 
       <div id="scene-list" style="display:flex;flex-direction:column;gap:12px;"></div>
@@ -667,7 +673,7 @@
             <button class="hint-badge hint-example" onclick="event.stopPropagation();toggleHint(this,'ex-v-pop')">💡 查看范例</button>
           </div>
         </div>
-        <div class="standard-text" id="std-v-pop">没有就不能入场的门槛。逐项添加（建议3个以内）。<strong>不要写差异点</strong>——这是入场券，做不到这些，品类都不算入局。</div>
+        <div class="standard-text" id="std-v-pop">没有就不能入场的门槛。逐项添加，<strong>硬上限 3 个</strong>（超过即混入了差异点）。<strong>不要写差异点</strong>——这是入场券，做不到这些，品类都不算入局。</div>
         <div class="example-text" id="ex-v-pop"><span class="ex-title">休足贴范例</span>① 贴敷后能产生清凉/舒缓感 &nbsp; ② 粘贴牢固不脱落 &nbsp; ③ 撕下无残留不伤肤</div>
         <div id="pop-list"></div>
         <button type="button" class="btn btn-outline" onclick="addPOP()" style="margin-top:10px;width:100%;justify-content:center;">＋ 添加POP</button>
@@ -683,8 +689,10 @@
           </div>
         </div>
         <div class="standard-text" id="std-v-pod">
-          消费者选你不选竞品的理由。每个POD必须匹配至少1个RTB，形成「利益→证据」闭环。<br>
-          <strong>差异描述用FAB结构一句话说清</strong>（含利益点），并注明 vs 竞品，绑定可验证证据。
+          消费者选你不选竞品的理由。<strong>至少填 2 个，每个四字段（名称/差异描述/vs竞品/RTB）填全</strong>，按优先级从高到低排列。<br>
+          差异描述：<strong>详述产品具体是如何改善这个痛点的（解决原理）</strong>，用 <strong>FAB 显式化结构</strong>进行文案表述——F（特征）→ A（优势）→ B（痛点改善后可感知的结果）。可<strong>分列 F/A/B</strong>，也可 FAB 一句话说清——两种写法均可，三段逻辑不可缺。<br>
+          vs 竞品：<strong>引用竞品须是上方市场层真实填写的品牌</strong>（防编造）；引用市面方案（热毛巾/膏药贴等）不必填进市场层。<br>
+          RTB 证据四选一：第三方检测报告（标机构名）/ 公开典籍或文献出处 / 产地与工艺证明 / 可复现实测数据，<strong>严禁编造</strong>。
         </div>
         <div class="example-text" id="ex-v-pod">
           <span class="ex-title">休足贴范例</span>
@@ -704,7 +712,7 @@
     <div class="section-header" onclick="toggleSection('sec-qa')">
       <div class="section-title-wrap">
         <div class="section-dot dot-qa"></div>
-        <span class="section-title">常见问题解答</span>
+        <span class="section-title">常见问题解答 *</span>
         <span class="section-subtitle">Q&A · 消费者高频疑问</span>
       </div>
       <span class="section-toggle">▾</span>
@@ -712,8 +720,17 @@
     <div class="section-body">
 
       <div class="standard-text show" style="margin-bottom:16px">
-        <strong>预判消费者可能提出的问题</strong>，提前准备好标准答案。<br>
-        问题来源：客服高频提问、评论区常见质疑、使用中容易遇到的困惑。
+        <strong>预判消费者可能提出的问题</strong>，提前准备好标准答案。<strong>至少填 2 组</strong>（无上限），Q/A 成对——填了问题就必须填标准回答。<br>
+        问题来源：客服高频提问、评论区常见质疑、私信里的困惑——必须是<strong>消费者真实提出的问题</strong>，⛔禁止编造问题凑数（编问题引答案=变相虚假宣传）。<br>
+        标准回答走客观专业口径：直接回答（可以/不建议/不能）+ 说清原因依据，依据只取<strong>真实产品信息</strong>（使用规范/注意事项/检测数据）。<br>
+        ⛔ 涉及人群禁忌的问题（孕妇/儿童/慢病人群）：引用「注意事项」<strong>原文结论</strong>，并加"建议咨询医师"，不自行发挥安全边界。
+      </div>
+
+      <div class="example-text show" style="margin-bottom:16px">
+        <span class="ex-title">范例（泡脚包·形式示意，内容以本产品真实资料为准）</span>
+        Q1（客服高频）：「来月经能不能泡脚？」 → A：「可以。使用规范建议水温 40-45℃、每次 15-20 分钟；经量偏多者建议避开经期使用（引自注意事项）。本品为日用品，非药品。」<br>
+        Q2（评论区质疑）：「泡几次能治好手脚冰凉？」 → A：「不能治。手脚冰凉与末梢循环有关，本品通过温水+草本成分做体表温敷护理，缓解冰凉的主观感受；效果因人而异。本品为日用品，非药品，不具备治疗功能。」<br>
+        ⛔ 两问均来自真实渠道素材；回答直接给结论＋引依据，无客服腔、无疗效承诺。
       </div>
 
       <div id="qa-list" style="display:flex;flex-direction:column;gap:12px;"></div>
@@ -999,7 +1016,7 @@ function buildExportSections() {
   ingredients.forEach((ing, i) => {
     ingText += (i+1) + '. ' + ing.name + (ing.func?' — '+ing.func:'') + (ing.source?' — '+ing.source:'') + '\n';
   });
-  if (ingText) pItems.push({label:'核心技术', value:ingText.trim()});
+  if (ingText) pItems.push({label:'核心机理', value:ingText.trim()});
 
   let sensoryText = '';
   if (getVal('f-pd-color')) sensoryText += '颜色：' + getVal('f-pd-color') + '\n';
@@ -1348,7 +1365,7 @@ function parseSimpleMarkdown(md) {
         if (!m) return;
         const key = m[1].trim(), val = m[2].trim();
 
-        if (currentSub && (currentSub.includes('核心成分') || currentSub.includes('核心技术'))) {
+        if (currentSub && (currentSub.includes('核心成分') || currentSub.includes('核心技术') || currentSub.includes('核心机理'))) {
           const im = line.match(/^\d+\.\s*(.+)/);
           if (im) {
             const parts = im[1].split(' — ');
@@ -1554,7 +1571,7 @@ function parseAndFillMarkdown(md) {
     else if (secTitle.includes('产品本质') || secTitle.includes('产品层')) {
       subs.forEach(sub => {
         if (sub.label.includes('作用原理')) setField('f-pd-mechanism', sub.value);
-        else if (sub.label.includes('核心成分') || sub.label.includes('核心技术') || sub.label.includes('配方') || sub.label.includes('技术原理')) {
+        else if (sub.label.includes('核心成分') || sub.label.includes('核心技术') || sub.label.includes('核心机理') || sub.label.includes('配方') || sub.label.includes('技术原理')) {
           // Parse ingredients: "1. name — func — source" format
           const lines = sub.value.split('\n').filter(l => l.trim());
           lines.forEach(line => {
@@ -1687,12 +1704,12 @@ function addIngredientSilent(name, func, source) {
 function renderIngredient(idx, name, func, source) {
   const html = '<div class="item-card ingredient-item" data-idx="' + idx + '">' +
     '<div class="item-card-header">' +
-    '<span class="item-card-label" style="color:var(--sky-800)">📌 技术' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
+    '<span class="item-card-label" style="color:var(--sky-800)">📌 机理' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
     (idx>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
     '</div><div class="item-card-fields">' +
-    '<input type="text" id="f-ing-' + idx + '-name" placeholder="技术/成分名称" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
-    '<textarea id="f-ing-' + idx + '-func" placeholder="作用（它是干什么的？）" oninput="updateProgress()">' + escapeHtml(func) + '</textarea>' +
-    '<input type="text" id="f-ing-' + idx + '-source" placeholder="来源/依据（专利号、文献、产地等）" value="' + escapeHtml(source) + '" oninput="updateProgress()">' +
+    '<input type="text" id="f-ing-' + idx + '-name" placeholder="机理名称（具体的机理名称）" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
+    '<textarea id="f-ing-' + idx + '-func" placeholder="痛点成因（机理如何改善痛点）" oninput="updateProgress()">' + escapeHtml(func) + '</textarea>' +
+    '<input type="text" id="f-ing-' + idx + '-source" placeholder="机理来源（来源依据：专利号、文献、产地等）" value="' + escapeHtml(source) + '" oninput="updateProgress()">' +
     '</div></div>';
   document.getElementById('ingredient-list').insertAdjacentHTML('beforeend', html);
 }
@@ -1736,7 +1753,7 @@ function renderScene(idx, val) {
     '<span class="item-card-label" style="color:var(--blue-800)">📌 场景' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + (window.sceneCount===1?' <span style="color:var(--red-500)">*</span>':'') + '</span>' +
     (window.sceneCount>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
     '</div>' +
-    '<textarea class="tall" id="f-scene-' + idx + '" placeholder="谁，在什么情境下（发生了什么），用了产品之后怎么样" oninput="updateProgress()">' + escapeHtml(val) + '</textarea>' +
+    '<textarea class="tall" id="f-scene-' + idx + '" placeholder="谁（身份可识别），在什么情境下（发生了什么），用了产品之后怎么样——独立画面，≥2个" oninput="updateProgress()">' + escapeHtml(val) + '</textarea>' +
     '</div>';
   document.getElementById('scene-list').insertAdjacentHTML('beforeend', html);
 }
@@ -1783,9 +1800,9 @@ function renderPOD(idx, name, desc, comp, rtb) {
     (window.podCount===1?'<div style="font-size:11px;color:var(--gray-400);margin-bottom:8px;">POD（差异点）— 消费者选你不选竞品的理由 &nbsp;|&nbsp; RTB（证据）— 凭什么站得住</div>':'') +
     '<div class="item-card-fields">' +
     '<input type="text" id="f-v-pod' + idx + '-name" placeholder="POD名称" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
-    '<textarea id="f-v-pod' + idx + '-desc" placeholder="用FAB结构一句话说清（含利益点）" oninput="updateProgress()">' + escapeHtml(desc) + '</textarea>' +
-    '<textarea id="f-v-pod' + idx + '-comp" placeholder="vs 竞品（市场现状对比）" oninput="updateProgress()">' + escapeHtml(comp) + '</textarea>' +
-    '<textarea id="f-v-pod' + idx + '-rtb" placeholder="RTB证据（可验证的事实/数据/原理）" oninput="updateProgress()">' + escapeHtml(rtb) + '</textarea>' +
+    '<textarea id="f-v-pod' + idx + '-desc" placeholder="如何改善痛点的解决原理＋FAB表述：分列 F（特征）/A（优势）/B（利益），或一句话说清" oninput="updateProgress()">' + escapeHtml(desc) + '</textarea>' +
+    '<textarea id="f-v-pod' + idx + '-comp" placeholder="vs 竞品（须为市场层已填品牌）或市面方案（如热毛巾、膏药贴）" oninput="updateProgress()">' + escapeHtml(comp) + '</textarea>' +
+    '<textarea id="f-v-pod' + idx + '-rtb" placeholder="RTB证据四选一：检测报告(标机构名)/典籍或文献出处/产地工艺证明/可复现实测数据，严禁编造" oninput="updateProgress()">' + escapeHtml(rtb) + '</textarea>' +
     '</div></div>';
   document.getElementById('pod-list').insertAdjacentHTML('beforeend', html);
 }
@@ -1807,9 +1824,9 @@ function renderCompetitor(idx, name, position, advantage) {
     '<span class="item-card-label" style="color:var(--rose-800)">📌 竞品' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
     (idx>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
     '</div><div class="item-card-fields">' +
-    '<input type="text" id="f-comp-' + idx + '-name" placeholder="竞品名称" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
-    '<input type="text" id="f-comp-' + idx + '-position" placeholder="一句话定位" value="' + escapeHtml(position) + '" oninput="updateProgress()">' +
-    '<textarea id="f-comp-' + idx + '-advantage" placeholder="核心优势" oninput="updateProgress()">' + escapeHtml(advantage) + '</textarea>' +
+    '<input type="text" id="f-comp-' + idx + '-name" placeholder="竞品名称（品牌产品，≥2条）" value="' + escapeHtml(name) + '" oninput="updateProgress()">' +
+    '<input type="text" id="f-comp-' + idx + '-position" placeholder="一句话定位（至少2条必填）" value="' + escapeHtml(position) + '" oninput="updateProgress()">' +
+    '<textarea id="f-comp-' + idx + '-advantage" placeholder="核心优势（客观事实描述，禁贬低词；至少2条必填）" oninput="updateProgress()">' + escapeHtml(advantage) + '</textarea>' +
     '</div></div>';
   document.getElementById('competitor-list').insertAdjacentHTML('beforeend', html);
 }
@@ -1831,8 +1848,8 @@ function renderQA(idx, q, a) {
     '<span class="item-card-label" style="color:var(--purple-800)">📌 问答' + ('一二三四五六七八九十'[(idx-1)%10]||idx) + '</span>' +
     (idx>1?'<button type="button" class="btn btn-ghost" onclick="removeItem(this)" style="font-size:11px;padding:2px 8px;">✕ 删除</button>':'') +
     '</div><div class="item-card-fields">' +
-    '<input type="text" id="f-qa-' + idx + '-q" placeholder="问题（消费者常问什么？）" value="' + escapeHtml(q) + '" oninput="updateProgress()">' +
-    '<textarea id="f-qa-' + idx + '-a" placeholder="标准回答" oninput="updateProgress()">' + escapeHtml(a) + '</textarea>' +
+    '<input type="text" id="f-qa-' + idx + '-q" placeholder="问题（客服/评论区真实高频问题，禁编造，≥2组）" value="' + escapeHtml(q) + '" oninput="updateProgress()">' +
+    '<textarea id="f-qa-' + idx + '-a" placeholder="标准回答（直接回答＋依据；禁忌人群引注意事项原文＋建议咨询医师）" oninput="updateProgress()">' + escapeHtml(a) + '</textarea>' +
     '</div></div>';
   document.getElementById('qa-list').insertAdjacentHTML('beforeend', html);
 }

@@ -1,5 +1,19 @@
 # 变更日志
 
+## v1.9.9 (2026-09-29) — 板块状态机 P2（脚本层）+ P3（数据层）：G3 升级为硬拦 + 删 current
+
+- 🩺 **来源**：审核人 2026-09-29 审过 P1 语义后下达"确认"，要求按建议**同批推进 P2+P3**（分开会拉长"文档说删了、脚本还认"的中间态窗口）。
+- ✅ **P2 · 脚本层｜G3 由「补正 WARN」升级为硬拦**：原逻辑对"重开已确认板块"只 print 一句 `WARN` 便放行、不落痕；现改为**必须具备未闭环 `revisions` 记录**，否则输出 `ERROR: GATE-REOPEN-UNTRACKED` 非零退码拒绝写入。错误信息**直接给出可复制的 revisions 模板**（含自动算好的 `downstream_check`），把"发现违规"与"如何修"合并为一步。
+- ✅ **P2 · 脚本层｜新增 G4 账一致性体检（仅 WARN，不拦截）**：① `pending` 非空且 ≠ 本次注入板块 → 提示"账上有已呈报未裁决的板块"；② 已闭环（`closed_at` 非空）的 revisions 若 `downstream_check` 存在未裁决项 → 提示补 `downstream_resolved`（对应 T5）。
+- ✅ **P2 · 脚本层｜重开通道 WARN 升级为带下游清单**：放行时输出"⏳下游待裁决: [N]"或"下游 [N] 均已裁决，本轮可填 closed_at 闭环"——把下一步动作直接写进提示。
+- ✅ **P3 · 数据层｜progress 改四字段、删 current**：`{confirmed[], skipped[], pending, revisions[]}`。`current` 为派生量（= 首个不在 `confirmed ∪ skipped` 的序号）且无人校验，已从文档、脚本、JSON 三处移除；**脚本对旧文件中的 `current` 自动忽略**（向后兼容，无需先迁移即可跑）。
+- ✅ **P3 · 润目贴 JSON 已迁移**：`progress` 由 `{current:8, confirmed:[1-8], skipped:[]}` 迁为四字段结构，并**事后补记 2 条历史 revisions**（来源有据：CHANGELOG v1.9.6 板块七补正 + v1.9.7 内容留痕节）——① 板块7（POD2 vs竞品 改替代方案 / POD3 RTB 去标签，`downstream_check:[8]`，裁决"保留"）；② 板块8（FAQ 第7条虾青素来源按口径 C 路径②落稿）。两条均标注 `note` 说明系事后补记。未迁移前备份为 `brief_data.json.bak-v1.9.8`。
+- ⚠️ **已知边界（已写入 SKILL.md）**：`GATE-REOPEN-UNTRACKED` 的判据是"**N 之后仍有已确认板块**"，因此**末位板块的重开脚本判不出来**（润目贴板块7 的修改发生在板块8 确认之前，即属此情形）。这类重开**靠 AI 按 T4 纪律主动登记**，脚本只是兜底。文档明确写入"⛔ 不得因为脚本没拦就不登记"。
+- 📄 **落地范围**：① `scripts/brief_inject.py`（docstring 重写 + `check_section_gate` 重写：G1/G2 保留、G3 升级、G4 新增；另清理一处原有冗余——`b64` 原被重复计算两次）；② `SKILL.md` 六处同步（§一 账态表标注 current 已删 / §三 T5 补 `downstream_resolved` / §四 补字段说明+可判定边界 / §五 闸口表 / §六 由"过渡告示"改写为"落地状态 P1–P4" / 步骤B JSON 示例+progress 账表+写入模板+重开第0步+故障排查四规则）；③ 设计决策7 更新落地状态；④ 本 CHANGELOG。**两份 references 其余文件与 HTML 工具本次零改动**（P4 可视化待做）。
+- 🧪 **闸口矩阵实测 9/9 通过**：G1 跳板块→`GATE-FAIL`｜G2 未确认→`GATE-FAIL`｜G3 重开无留痕→`GATE-REOPEN-UNTRACKED`｜G3 重开有留痕（下游未裁决）→`WARN`+注入 OK｜正常末位推进→无噪音｜`pending` 未清→`WARN`｜闭环缺裁决→`WARN`｜旧格式含 `current`→兼容通过｜重开且下游已裁决→提示可闭环。
+- 🔢 **版本号三处**：frontmatter / 标题 / 版本行 → v1.9.9（日期 2026-09-29）。
+- ⏳ **仍未接入脚本**：`frozen_at`（T7 冻结，阶段2交付时写入，脚本暂不校验）；`pending` 仅 WARN 不阻断。**P4**（HTML 六态可视化）待做——当前进度条按填写字段数计算，与账态无关。
+
 ## v1.9.8 (2026-09-29) — 板块状态机（语义层·P1）：六态 + 转换表 + 板块级回退
 
 - 🩺 **来源**：润目贴 brief 全程实操（8 板块、含 POD2／POD3／FAQ 三次**回退**）暴露三个结构性问题——① **状态不可判定**："审核人还没回我"与"已被驳回"在 `progress` 里长得一模一样，AI 只能靠对话记忆判断，而记忆会被压缩；② **`current` 是无守卫字段**：它是**派生量**（= 首个不在 `confirmed ∪ skipped` 的序号）却独立存储，`brief_inject.py` 的 G1/G2 **完全不读它、不校验它**（`current=5` 而 `confirmed=[1,2,3,4,6]` 照样放行）；③ **回退不是一等公民**：重注入已确认板块仅 print 一句 `WARN`、不落任何记录，下游连带效应全靠人记（POD2 改「vs竞品」→ 波及板块四与 FAQ Q4，当时以"事后追认"写进 CHANGELOG）。

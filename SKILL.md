@@ -14,12 +14,12 @@ description: >
 compatibility: workbuddy
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, Agent, Skill]
 dependencies: [python3]
-version: "1.9.8"
+version: "1.9.9"
 ---
 
-# 蔡氏福宁产品brief填写 v1.9.8
+# 蔡氏福宁产品brief填写 v1.9.9
 
-> **版本**：v1.9.8 | **日期**：2026-09-29
+> **版本**：v1.9.9 | **日期**：2026-09-29
 
 ## 概述
 
@@ -361,9 +361,9 @@ version: "1.9.8"
 |:--|:--|:--:|
 | **账**（事实，机器门禁与派生的唯一依据） | `confirmed[]`、`skipped[]`、`pending`、`revisions[]` | 持久化于 `brief_data.json` |
 | **态**（六态，给人看的） | 全部由账推导 | **不存储** |
-| ~~`current`~~ | 等价于"首个不在 confirmed ∪ skipped 的序号"，属**派生量** | **删除** |
+| ~~`current`~~ | 等价于"首个不在 confirmed ∪ skipped 的序号"，属**派生量** | **已删除**（v1.9.9 落地） |
 
-⛔DO NOT 把派生量（态、`current`）独立存进 JSON——多一个字段就多一处双本账漂移的机会。`current` 独立存储却无人校验，正是本次诊断出的隐患（`current=5` 而 `confirmed=[1,2,3,4,6]` 这种自相矛盾，旧脚本照样放行）。
+⛔DO NOT 把派生量（态、`current`）独立存进 JSON——多一个字段就多一处双本账漂移的机会。`current` 独立存储却无人校验，正是本次诊断出的隐患（`current=5` 而 `confirmed=[1,2,3,4,6]` 这种自相矛盾，旧脚本照样放行）。v1.9.9 起 `progress` 只有四个账字段，**脚本与 JSON 均不再含 `current`**（旧文件中的 `current` 会被自动忽略）。
 
 ### 二、六态
 
@@ -376,7 +376,7 @@ version: "1.9.8"
 | ⚫ 已跳过 | 审核人显式跳过 | N ∈ skipped |
 | 🔒 已冻结 | 阶段2交付后全板块锁定 | `frozen_at` 非空 |
 
-**为什么要给「待确认」落账**：这是引入状态机的直接动因——"审核人还没回我"与"已被驳回"在旧账里长得**一模一样**，AI 只能靠对话记忆判断，而对话记忆会被压缩（第 428 行"不凭对话记忆"正为此而写）。`pending` 把它变成一个可读事实。
+**为什么要给「待确认」落账**：这是引入状态机的直接动因——"审核人还没回我"与"已被驳回"在旧账里长得**一模一样**，AI 只能靠对话记忆判断，而对话记忆会被压缩（阶段1「板块间校验锁」那句"**不凭对话记忆**"正为此而写）。`pending` 把它变成一个可读事实。
 
 ### 三、转换表（合法迁移）
 
@@ -386,7 +386,7 @@ version: "1.9.8"
 | T2 | 🟡待确认 → 🟢已确认 | 审核人确认 | **G2**：未确认不许注入；`confirmed += N`；`pending = null` |
 | T3 | 🟡待确认 → ⚪未开始 | 审核人驳回 | `pending = null`；须在回复中写明驳回要点，⛔不得静默进入下一板块 |
 | T4 | 🟢已确认 → 🔵修订中 | 重开（🟡级操作） | 须审核人**明示同意**；`revisions += {…}`、`closed_at = null` |
-| T5 | 🔵修订中 → 🟢已确认 | 修订闭环 | `downstream_check` **逐项裁决完毕**才允许；填 `closed_at` |
+| T5 | 🔵修订中 → 🟢已确认 | 修订闭环 | `downstream_check` **逐项裁决**写入 `downstream_resolved` 后方可；填 `closed_at` |
 | T6 | ⚪未开始 / 🟡待确认 → ⚫已跳过 | 审核人显式跳过 | `skipped += N`；`pending = null`；**并告知后果**（该板块以缺口呈现直至补齐） |
 | T7 | 🟢已确认 → 🔒已冻结 | 阶段2交付 | 全部板块 ∈ confirmed ∪ skipped；写 `frozen_at` |
 
@@ -399,6 +399,9 @@ version: "1.9.8"
   "section": 7,
   "reason": "POD2 的 vs竞品 改用市面替代方案对照（形态类优势对应替代方案）",
   "downstream_check": [8],
+  "downstream_resolved": [
+    {"section": 8, "decision": "保留——FAQ Q4 用消费者语言、POD2 用客观陈述，同一对照关系两种语境"}
+  ],
   "opened_at": "2026-09-28 17:05",
   "closed_at": "2026-09-28 17:16"
 }
@@ -406,8 +409,11 @@ version: "1.9.8"
 
 - **粒度＝板块级**（NOT 字段级）：一次重开记一条，**动了哪些字段写进 `reason`**。
 - **`reason` 必填**：说清"改什么 + 为什么"，⛔禁写"微调""优化"类空话。
-- **`downstream_check` 自动登记**：重开时自动填入"该板块之后**所有已确认**的板块"（上例 = `[8]`）；闭环时**逐项裁决**——保留 / 同步修改 / 确认无影响，三选一写明。⛔ **未逐项裁决不得闭环**。
+- **`downstream_check` 自动登记**：重开时自动填入"该板块之后**所有已确认**的板块"（上例 = `[8]`），由脚本在 `GATE-REOPEN-UNTRACKED` 的错误指引里直接给出。
+- **`downstream_resolved` 逐项裁决**：闭环时对 `downstream_check` 每一项三选一写明——`保留`／`同步修改`／`确认无影响`。⛔ **未逐项裁决不得填 `closed_at`**；脚本对"已闭环但缺裁决"的条目输出 WARN 提醒（SKILL 层面为硬规则，脚本层兜底为 WARN）。
 - **未闭环标识**：`closed_at` 为空即"修订中"；此时 AI 回复须显式呈现"板块 N 处于【🔵 修订中】"并列出待裁决项，不得等审核人追问。
+
+> ⚠️ **脚本可判定边界（v1.9.9 已知限制）**：`GATE-REOPEN-UNTRACKED` 的判据是"**N 之后仍有已确认板块**"。因此**末位板块的重开**（改完当前的最后一个已确认板块、尚未推进到下一板块——如润目贴板块7 在板块8 确认之前被改）**脚本判不出来**。这类重开**靠 AI 按 T4 纪律主动登记 `revisions`**，脚本只是兜底而非唯一防线。⛔ 不得因为"脚本没拦"就不登记。
 
 > 实操对照（本次润目贴）：板块7 的 POD2 改了「vs竞品」→ 连带效应是"与板块四不再交叉""与 FAQ Q4 出现同源"。旧机制下这些靠人记住再写进 CHANGELOG（**事后追认**），状态机把它变成**转换的必填项**（`downstream_check: [8]`）。
 
@@ -416,17 +422,22 @@ version: "1.9.8"
 | 层 | 谁管 | 现状 |
 |:--|:--|:--|
 | **态**（怎么迁移） | 本段（语义层） | ✅ v1.9.8 落定 |
-| **闸**（越界即拒） | `brief_inject.py` G1/G2/G3 | ⏳ P2 待升级 |
-| **账**（存什么） | `brief_data.json` | ⏳ P3 待迁移 |
-| **视**（状态可见） | HTML 进度条 | ⏳ P4 待做 |
+| **闸**（越界即拒） | `brief_inject.py` G1/G2/G3 硬拦 + G4 体检 | ✅ **v1.9.9 完成** |
+| **账**（存什么） | `brief_data.json`：`confirmed/skipped/pending/revisions` | ✅ **v1.9.9 完成**（`current` 已删） |
+| **视**（状态可见） | HTML 进度条 | ⏳ P4 待做（当前进度条按填写字段数计算，与账态无关） |
 
-### 六、过渡告示（v1.9.8 生效范围）
+### 六、落地状态（v1.9.9）
 
-本段为**目标语义**，先行把规则定死。**脚本层与 JSON 模型尚未同步**：
+状态机已**四层中的三层到位**，语义层、脚本层、数据层三者一致：
 
-- `brief_inject.py` 仍读 `progress.confirmed / skipped`（G1/G2 行为不变），**`revisions`／`pending`／`frozen_at` 暂不校验**；
-- JSON 中 **`current` 字段暂留**——删除动作在 P3 与脚本同批执行，避免中间态不可用；
-- 过渡期**以脚本实际行为为准**；本段只约束 AI 的**判断与回复呈现**（读账定态、修订须留痕、闭环须逐项裁决）。
+| 阶段 | 内容 | 状态 |
+|:--:|:--|:--:|
+| **P1** | 语义层：本段（六态 + 转换表 + 回退语义） | ✅ v1.9.8 |
+| **P2** | 脚本层：`brief_inject.py` 接入——G3 由「补正 WARN」升级为**硬拦**（`GATE-REOPEN-UNTRACKED`），新增 G4 账一致性体检（pending 未清 / 已闭环缺裁决 → WARN） | ✅ v1.9.9 |
+| **P3** | 数据层：`progress` 改 `{confirmed, skipped, pending, revisions}`，**删 `current`**；脚本忽略旧文件中的 `current`（向后兼容） | ✅ v1.9.9 |
+| **P4** | 可视化：HTML 里把六态显示出来（进度条加状态色标） | ⏳ 待做 |
+
+⚠️ **仍未接入脚本的两个账字段**：`frozen_at`（T7 冻结，阶段2交付时写入，脚本暂不校验）；`pending` 仅做 WARN 提示，不阻断注入。
 
 ---
 
@@ -571,18 +582,38 @@ AI 将确认的字段值记录到 `[输出目录]/brief_data.json`，然后用 `
     "qaCount": 2
   },
   "progress": {
-    "current": 3,
     "confirmed": [1, 2, 3],
-    "skipped": []
+    "skipped": [],
+    "pending": null,
+    "revisions": [
+      {"section": 2, "reason": "POD 优势句改写（去竞品名）",
+       "downstream_check": [3],
+       "downstream_resolved": [{"section": 3, "decision": "确认无影响"}],
+       "opened_at": "2026-09-28 17:05", "closed_at": "2026-09-28 17:16"}
+    ]
   }
 }
 ```
 
 > **struct 计数规则**：记录动态列表（成分/竞品/人群/场景/POP/POD/QA）各有多少项。浏览器加载时根据这些计数重建对应的表单元素。
 
-> **progress 进度账（v1.9.1 起必填，防跳板块的物化状态）**：`current` = 当前版块序号；`confirmed` = 审核人已确认的版块序号（**严格递增追加**，一次只加一个）；`skipped` = 审核人显式要求跳过的序号留痕。步骤A获确认后立即追加，步骤B注入必须带 `--section N`——`brief_inject.py` 按 G1连续性/G2当前确认 两条硬规则机器校验，违规输出 `ERROR: GATE-FAIL` 拒绝写入；重注入已确认板块且其后板块也已确认时输出 `WARN`（补正通道，须审核人已同意该 🟡级修改）并放行。**禁止通过手改 progress 绕过闸口**，闸口判定权在脚本。
+> **progress 进度账（v1.9.1 起必填，v1.9.9 起接入状态机）**——**账**四字段，六态由账派生（见 `## 🔄 板块状态机`）：
 >
-> ⏳ **v1.9.8 迁移预告**：`current` 为**派生量**（= 首个不在 `confirmed ∪ skipped` 的序号）且无人校验，已计划**删除**；同时新增 `pending`（当前呈报待确认的板块号）与 `revisions[]`（板块级回退留痕）。账态分离与六态语义见 `## 🔄 板块状态机`。**当前格式仍按上方示例执行**（删 `current` 与 `revisions` 校验在 P3/P2 与脚本同批落地，届时本节会同步改写）。
+> | 字段 | 含义 | 写入时机 |
+> |:--|:--|:--|
+> | `confirmed[]` | 审核人已确认的版块序号（**严格递增追加**，一次只加一个） | 步骤A获确认后 |
+> | `skipped[]` | 审核人显式要求跳过的序号留痕 | 审核人显式跳过时 |
+> | `pending` | **当前已呈报、待审核人裁决**的版块号（无则 `null`） | 步骤A呈报时记 N；确认/驳回时置 `null` |
+> | `revisions[]` | 板块级回退留痕（见 §板块状态机 · 四） | 重开已确认板块前 |
+>
+> ⛔ **本账不含 `current`**（v1.9.9 已删）——它是派生量，由 `confirmed ∪ skipped` 推导，独立存储只会制造双本账漂移。旧文件里的 `current` 会被脚本自动忽略。
+>
+> 步骤B注入必须带 `--section N`——`brief_inject.py` 按四条规则机器校验，**判定权在脚本**：
+> - **G1 连续性 / G2 当前确认** → 违规输出 `ERROR: GATE-FAIL` 拒绝写入
+> - **G3 重开须留痕** → 重开已确认板块（其后仍有已确认板块）时若无未闭环 `revisions`，输出 `ERROR: GATE-REOPEN-UNTRACKED` 拒绝写入
+> - **G4 账一致性体检** → `pending` 未清、已闭环 revisions 缺 `downstream_resolved` 时输出 `WARN`（不拦截）
+>
+> **禁止通过手改 progress 绕过闸口**。跳过板块、回退板块、驳回板块都必须按上方时机**如实落账**。
 
 **写入三步操作**（每版块执行一次，{N}=当前版块序号）：
 
@@ -598,15 +629,19 @@ data['fields']['f-s-name'] = '蔡氏福宁·泡脚包'
 data['fields']['f-s-category'] = '中药泡脚'
 data['struct']['ingCount'] = 2
 # 记进度账：审核人已确认本版块（步骤A完成）才允许追加
-data.setdefault('progress', {'current': 0, 'confirmed': [], 'skipped': []})
-data['progress']['current'] = {N}
-if {N} not in data['progress']['confirmed']:
-    data['progress']['confirmed'].append({N})
+data.setdefault('progress', {'confirmed': [], 'skipped': [], 'pending': None, 'revisions': []})
+p = data['progress']
+p.setdefault('confirmed', []); p.setdefault('skipped', [])
+p.setdefault('pending', None);   p.setdefault('revisions', [])
+if {N} not in p['confirmed']:
+    p['confirmed'].append({N})
+p['pending'] = None                     # 已获确认 → 清掉呈报标记（T2）
+p.pop('current', None)                  # v1.9.9：派生量不落账
 with open(path, 'w') as f:
     json.dump(data, f, ensure_ascii=False)
 "
 
-# 第2步：注入 HTML（--section 闸口机器校验顺序：违规即 ERROR: GATE-FAIL 且拒绝写入）
+# 第2步：注入 HTML（--section 闸口机器校验：违规即 ERROR: GATE-* 且拒绝写入）
 python3 [Skill目录]/scripts/brief_inject.py "[输出目录]/蔡氏福宁_产品brief_[产品名].html" "[输出目录]/brief_data.json" --section {N}
 
 # 第3步：验证注入结果（读通道1主数据）
@@ -626,6 +661,31 @@ else:
 # 第4步：合规机器校验（禁用词扫描+占位符残留+免责声明，判定权在脚本不在AI）
 python3 [Skill目录]/scripts/check_brief_compliance.py "[输出目录]/蔡氏福宁_产品brief_[产品名].html"
 ```
+
+> 🔵 **重开已确认板块时：先做「第 0 步」再走上面三步**（v1.9.9 起，对应 §板块状态机 · T4）
+>
+> 对**已确认**板块做修改是 🟡级操作，须审核人**明示同意**，且**必须先登记回退留痕**（否则脚本 G3 硬拦）：
+>
+> ```bash
+> python3 -c "
+> import json
+> path = '[输出目录]/brief_data.json'
+> data = json.load(open(path, encoding='utf-8')); p = data['progress']
+> N = {N}
+> p.setdefault('revisions', []).append({
+>     'section': N,
+>     'reason': '<改什么 + 为什么，禁空话>',
+>     'downstream_check': [n for n in sorted(p['confirmed']) if n > N],   # 自动登记下游
+>     'downstream_resolved': [],
+>     'opened_at': '<YYYY-MM-DD HH:MM>',
+>     'closed_at': None          # 空 = 修订中
+> })
+> json.dump(data, open(path, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+> "
+> ```
+>
+> **闭环**时（修订完成且审核人认可）补齐 `downstream_resolved`（逐项裁决：保留／同步修改／确认无影响）并填 `closed_at`。
+> ⚠️ 若重开的是**末位板块**（其后无已确认板块），脚本判不出来、不会拦，但**同样必须先登记**（`downstream_check` 填 `[]`）——规则效力不因脚本盲区而消失。
 
 **注入脚本工作原理**（v1.5.0 双通道方案）：
 - `brief_inject.py` 写入两条数据通道：
@@ -667,7 +727,12 @@ python3 [Skill目录]/scripts/check_brief_compliance.py "[输出目录]/蔡氏�
 🔌 **熔断器**：
 - JSON数据更新：成功=继续 | 失败=检查JSON格式 | 重试=2次 | 降级=手动编辑JSON文件
 - brief_inject.py 注入：成功=输出 `OK: N fields` → 继续 | 失败=输出 `ERROR:` 或异常 → 检查文件路径和权限 | 重试=2次 | 降级=记录该版块未注入的字段，在阶段2统一修复
-- 板块闸口：输出 `ERROR: GATE-FAIL`（顺序违规：跳板块/未确认就注入）→ ⛔**回到步骤A补审核人确认，禁止手改 progress 绕闸**；输出 `ERROR: GATE-NO-PROGRESS` → 按步骤B第1步补记进度账后重跑；输出 `WARN: …修改重注入` → 补正通道正常放行，但须确认该修改已过审核人同意（🟡级操作）
+- 板块闸口（v1.9.9 四规则，判定权在脚本）：
+  - `ERROR: GATE-FAIL`（顺序违规：跳板块 / 未确认就注入）→ ⛔**回到步骤A补审核人确认，禁止手改 progress 绕闸**
+  - `ERROR: GATE-NO-PROGRESS` → 按步骤B第1步补记进度账后重跑
+  - `ERROR: GATE-REOPEN-UNTRACKED`（重开已确认板块但 `revisions` 无对应未闭环留痕）→ 按步骤B「**重开第 0 步**」补登记 `revisions`（含 `reason` 与 `downstream_check`）后重跑
+  - `WARN: 板块N走重开通道…` → 重开正常放行；留意其中「⏳下游待裁决」项，**闭环前须逐项裁决**
+  - `WARN: 账上 pending=…` / `WARN: revisions 板块N 已闭环但…无裁决记录` → 账一致性体检提示，按提示补账（**不拦截**）
 - check_brief_compliance.py 合规校验：成功=输出 `PASS:` → 继续 | 失败=`FAIL:` 禁用词/占位符命中 → 改写对应字段重注入重跑（重试2次） | 降级=保留FAIL清单，提请审核人人工裁决，不得静默放行
 - Python验证注入：Python脚本输出 `OK:` → 写入成功，告知用户 | 输出 `FAIL:` → 写入失败，检查注入脚本后重试 | 重试=2次 | 降级=标注该字段写入失败，请审核人手动填写
 
@@ -911,7 +976,7 @@ v1.0.2 新增的 `parseSimpleMarkdown()` 双解析器仍然保留在HTML工具�
 | 方案 | 优点 | 为什么不选 |
 |:-----|:-----|:----------|
 | 只保留 progress 账 + G1/G2 闸（v1.9.1~v1.9.7） | 零新增概念，顺序违规已有机器拦截 | 只拦"跳板块"，不认"回退"。三个真问题：① **状态不可判定**——"待确认／修订中"两态在账里根本不存在，AI 只能靠对话记忆，而对话记忆会被压缩；② `current` 是派生量却独立存储且**无人校验**（`current=5` 而 `confirmed=[1,2,3,4,6]` 照样放行）；③ **回退不是一等公民**——重注入仅 print 一句 WARN、不落痕，下游连带效应靠人记（润目贴实操中 POD2 改「vs竞品」→ 波及板块四与 FAQ，全靠事后追认写进 CHANGELOG） |
-| **账态分离 + 六态 + 板块级 revisions ✅** | 态由账派生（不新增漂移面，与记忆系统"派生数据不独立存储"同源）；`revisions.downstream_check` 把"下游谁要跟着变"从**事后追认**变成**转换的必填项** | 需分四阶段落地（语义→脚本→JSON→可视化），过渡期文档与脚本存在短暂不一致——已在 `## 🔄 板块状态机 · 六、过渡告示` 显式声明 |
+| **账态分离 + 六态 + 板块级 revisions ✅** | 态由账派生（不新增漂移面，与记忆系统"派生数据不独立存储"同源）；`revisions.downstream_check` 把"下游谁要跟着变"从**事后追认**变成**转换的必填项** | 需分四阶段落地（语义→脚本→JSON→可视化）。**P1/P2/P3 已于 v1.9.8–v1.9.9 完成**，仅 P4 可视化待做；P1 期间存在一版"文档先于脚本"的短暂不一致，已在当时显式声明，v1.9.9 起三层一致 |
 | 字段级回退（59+ 字段逐个定义状态） | 精确到字段，理论最优 | 复杂度爆炸：每条 revisions 要挂 N 个字段状态，而实际高频场景是"整板块重开"；板块级一条 `reason` 已足以溯源 |
 
 **收在板块级的判断依据**：润目贴实操中三次回退（POD2／POD3／FAQ）全部是板块级动作，`reason` 一句话说得清；字段级精度带来的收益远小于维护成本。若将来出现"单字段微小修正也要留痕"的需求，再评估是否下沉。
